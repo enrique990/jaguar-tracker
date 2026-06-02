@@ -11,7 +11,8 @@ data class LoginState(
     val correo: String = "",
     val contrasena: String = "",
     val cargando: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val loginExitoso: Boolean = false,
 )
 
 // Herencia -> Extendemos de ViewModel para sobrevivir a cambios de configuración.
@@ -43,5 +44,8 @@ class LoginViewModel : ViewModel() {
 
         // Cambiamos el estado a cargando. Andrés conectará aquí la lógica de Retrofit luego.
         _uiState.update { it.copy(cargando = true, error = null) }
+
+        // Simulación de éxito por ahora
+        _uiState.update { it.copy(cargando = false, loginExitoso = true) }
     }
 }

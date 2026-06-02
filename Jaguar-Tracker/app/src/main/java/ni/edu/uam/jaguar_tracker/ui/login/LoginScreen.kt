@@ -16,10 +16,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 // Composición -> Construimos la vista ensamblando funciones más pequeñas.
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit
 ) {
     // Observamos el flujo de datos encapsulado
     val state by viewModel.uiState.collectAsState()
+
+    // Efecto secundario para navegación
+    LaunchedEffect(state.loginExitoso) {
+        if (state.loginExitoso) {
+            onLoginSuccess()
+        }
+    }
 
     LoginContent(
         state = state,

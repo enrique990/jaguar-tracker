@@ -88,7 +88,7 @@ fun HomeScreen() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Text(text = "Hola, Enrique", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(text = "Hola", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(text = "¿Listo para tu entrenamiento en la UAM?", style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
             }
 
