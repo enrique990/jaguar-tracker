@@ -1,4 +1,4 @@
-package ni.edu.uam.jaguar_tracker.ui.screens
+package ni.edu.uam.jaguar_tracker.ui.login
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

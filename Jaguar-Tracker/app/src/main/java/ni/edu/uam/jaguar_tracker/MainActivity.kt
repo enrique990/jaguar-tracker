@@ -3,7 +3,7 @@ package ni.edu.uam.jaguar_tracker
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import ni.edu.uam.jaguar_tracker.ui.screens.LoginScreen
+import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
 
 // Herencia -> MainActivity hereda de ComponentActivity, fundamental en Android

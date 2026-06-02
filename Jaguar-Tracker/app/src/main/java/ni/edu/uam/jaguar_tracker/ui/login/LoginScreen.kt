@@ -1,4 +1,4 @@
-package ni.edu.uam.jaguar_tracker.ui.screens
+package ni.edu.uam.jaguar_tracker.ui.login
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
