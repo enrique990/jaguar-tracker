@@ -8,4 +8,35 @@
     <string name="contrasena_placeholder">Ingresa tu contraseña</string>
     <string name="entrar_button">Entrar</string>
     <string name="gym_logo_text">GYM</string>
+
+    <!-- Home Screen -->
+    <string name="mesocycle_title">Mesociclo Fuerza-Hipertrofia</string>
+    <string name="mesocycle_subtitle">Push Pull Legs - 4 días/semana</string>
+    <string name="progress_percentage">25%</string>
+    <string name="completed_label">Completado</string>
+    <string name="routines_title">Rutinas</string>
+    <string name="routine_fuerza">Fuerza</string>
+    <string name="routine_hipertrofia">Hipertrofia</string>
+    <string name="four_weeks">4 semanas</string>
+    <string name="new_routine_button">Nueva Rutina</string>
+    <string name="week_label">Semana %1$d</string>
+    <string name="to_follow">A SEGUIR</string>
+    <string name="day_lunes">Lunes</string>
+    <string name="day_martes">Martes</string>
+    <string name="day_jueves">Jueves</string>
+    <string name="day_viernes">Viernes</string>
+    <string name="workout_pecho_triceps">Pecho y Tríceps</string>
+    <string name="workout_espalda_biceps">Espalda y Bíceps</string>
+    <string name="workout_piernas">Piernas</string>
+    <string name="workout_hombros_abdomen">Hombros y Abdomen</string>
+    <string name="difficulty_medio">Medio</string>
+    <string name="difficulty_alto">Alto</string>
+    <string name="difficulty_bajo">Bajo</string>
+    <string name="duration_format">~%1$d min</string>
+    <string name="exercises_count">%1$d ejercicios</string>
+    <string name="add_week_button">Agregar Semana</string>
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_historial">Historial</string>
+    <string name="nav_ranking">Ranking</string>
+    <string name="nav_perfil">Perfil</string>
 </resources>

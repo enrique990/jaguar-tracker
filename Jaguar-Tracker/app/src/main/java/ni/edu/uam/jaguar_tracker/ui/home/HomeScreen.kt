@@ -1,176 +1,475 @@
 package ni.edu.uam.jaguar_tracker.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ni.edu.uam.jaguar_tracker.R
+import ni.edu.uam.jaguar_tracker.ui.theme.*
 
-// --- POO: Encapsulamiento de Datos (Modelo del Atleta) ---
-data class WorkoutActivity(
+data class Routine(
     val id: Int,
-    val type: String,
-    val duration: String,
-    val date: String
+    val name: String,
+    val weeks: Int,
+    val isSelected: Boolean = false,
+    val hasEmoji: Boolean = false
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+data class Workout(
+    val day: String,
+    val name: String,
+    val difficulty: String,
+    val difficultyColor: Color,
+    val duration: Int,
+    val exercises: Int,
+    val isLocked: Boolean = false,
+    val isCurrent: Boolean = false
+)
+
+data class Week(
+    val number: Int,
+    val workouts: List<Workout>,
+    val isExpanded: Boolean = false,
+    val hasEmoji: Boolean = false
+)
+
 @Composable
-fun HomeScreen() {
-    // Datos simulados (Mock) para el diseño UI/UX del gimnasio
-    val recentWorkouts = listOf(
-        WorkoutActivity(1, "Pecho y Tríceps", "1h 15m", "Hoy"),
-        WorkoutActivity(2, "Espalda y Bíceps", "1h 10m", "Ayer"),
-        WorkoutActivity(3, "Pierna y Hombro", "1h 30m", "Hace 3 días")
-    )
+fun HomeScreen(modifier: Modifier = Modifier) {
+    var routines by remember {
+        mutableStateOf(
+            listOf(
+                Routine(1, "Fuerza", 4, isSelected = true, hasEmoji = true),
+                Routine(2, "Hipertrofia", 4)
+            )
+        )
+    }
+
+    var weeks by remember {
+        mutableStateOf(
+            listOf(
+                Week(
+                    1,
+                    listOf(
+                        Workout("Lunes", "Pecho y Tríceps", "Medio", Color(0xFFFFA500), 65, 8, isCurrent = true),
+                        Workout("Martes", "Espalda y Bíceps", "Alto", Color(0xFFFF4500), 70, 9, isLocked = true),
+                        Workout("Jueves", "Piernas", "Alto", Color(0xFFFF4500), 75, 7, isLocked = true),
+                        Workout("Viernes", "Hombros y Abdomen", "Bajo", Color(0xFF32CD32), 50, 6, isLocked = true)
+                    ),
+                    isExpanded = true,
+                    hasEmoji = true
+                ),
+                Week(2, emptyList()),
+                Week(3, emptyList()),
+                Week(4, emptyList())
+            )
+        )
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Jaguar Tracker", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = { /* TODO: Búsqueda de máquinas o rutinas */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Buscar")
-                    }
-                    IconButton(onClick = { /* TODO: Abrir perfil del estudiante/atleta */ }) {
-                        Icon(Icons.Default.AccountCircle, contentDescription = "Perfil")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                    label = { Text("Inicio") },
-                    selected = true,
-                    onClick = { /* TODO: Navegar a Inicio */ }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.FitnessCenter, contentDescription = "Rutinas") },
-                    label = { Text("Rutinas") },
-                    selected = false,
-                    onClick = { /* TODO: Navegar a Rutinas */ }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                    label = { Text("Perfil") },
-                    selected = false,
-                    onClick = { /* TODO: Navegar a Perfil */ }
-                )
-            }
-        }
+        modifier = modifier.fillMaxSize(),
+        containerColor = JaguarBlack,
+        bottomBar = { JaguarBottomNavigation() }
     ) { paddingValues ->
-        // Usamos LazyColumn para eficiencia en listas largas de historial de entrenamiento
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                Text(text = "Hola", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text(text = "¿Listo para tu entrenamiento en la UAM?", style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
-            }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
 
+            // Header
             item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    ActionCard(modifier = Modifier.weight(1f), icon = Icons.Default.PlayArrow, title = "Iniciar\nEntrenamiento")
-                    ActionCard(modifier = Modifier.weight(1f), icon = Icons.Default.FitnessCenter, title = "Mis\nRutinas")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = stringResource(R.string.mesocycle_title),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = JaguarWhite
+                        )
+                        Text(
+                            text = stringResource(R.string.mesocycle_subtitle),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = JaguarGreen
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = stringResource(R.string.progress_percentage),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = JaguarWhite
+                        )
+                        Text(
+                            text = stringResource(R.string.completed_label),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = JaguarGray
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    ActionCard(modifier = Modifier.weight(1f), icon = Icons.Default.Timeline, title = "Mi\nProgreso")
-                    ActionCard(modifier = Modifier.weight(1f), icon = Icons.Default.DateRange, title = "Reservas\n")
+            }
+
+            // Rutinas
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.routines_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = JaguarWhite
+                    )
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(routines) { routine ->
+                            RoutineCard(routine = routine)
+                        }
+                    }
                 }
             }
 
+            // Nueva Rutina Button
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Entrenamientos Recientes", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = { /* TODO */ },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(Color(0xFF00D1FF), Color(0xFF00E6B3))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.new_routine_button),
+                            color = JaguarBlack,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp)
+                        )
+                    }
+                }
             }
 
-            items(recentWorkouts) { workout ->
-                WorkoutItem(workout)
+            // Weeks
+            items(weeks) { week ->
+                WeekAccordion(week = week)
             }
+
+            // Agregar Semana Button
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .border(
+                            width = 1.dp,
+                            color = JaguarBorder,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable { /* TODO */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Add, contentDescription = null, tint = JaguarWhite, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.add_week_button),
+                            color = JaguarWhite,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
-// --- POO: Composición UI ---
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActionCard(modifier: Modifier = Modifier, icon: ImageVector, title: String) {
+fun RoutineCard(routine: Routine) {
     Card(
-        modifier = modifier.height(100.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-        onClick = { /* TODO: Asignar navegación */ }
+        modifier = Modifier
+            .width(160.dp)
+            .height(72.dp)
+            .border(
+                width = 1.dp,
+                color = if (routine.isSelected) JaguarGreen else JaguarBorder,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        colors = CardDefaults.cardColors(containerColor = JaguarCard),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(32.dp))
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
+                text = "${routine.id}: ${routine.name}${if (routine.hasEmoji) " 💪" else ""}",
+                color = if (routine.isSelected) JaguarGreen else JaguarWhite,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                textAlign = TextAlign.Center
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = stringResource(R.string.four_weeks),
+                color = JaguarGray,
+                style = MaterialTheme.typography.labelSmall
             )
         }
     }
 }
 
 @Composable
-fun WorkoutItem(workout: WorkoutActivity) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+fun WeekAccordion(week: Week) {
+    var expanded by remember { mutableStateOf(week.isExpanded) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(JaguarSurface, RoundedCornerShape(12.dp))
+            .padding(vertical = 4.dp)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                // Icono representativo de completado
-                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.week_label, week.number) + if (week.hasEmoji) " 💪" else "",
+                color = JaguarWhite,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Outlined.Info, contentDescription = null, tint = JaguarGreen, modifier = Modifier.size(20.dp))
+                Icon(
+                    if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = JaguarGray,
+                    modifier = Modifier.size(20.dp)
+                )
+                Icon(Icons.Default.Remove, contentDescription = null, tint = JaguarRed, modifier = Modifier.size(20.dp))
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(text = workout.type, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
-                Text(text = "Duración: ${workout.duration}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                Text(text = workout.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+        }
+
+        if (expanded && week.workouts.isNotEmpty()) {
+            Column(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // "A SEGUIR" Label if any workout is current
+                if (week.workouts.any { it.isCurrent }) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(JaguarBorder, RoundedCornerShape(4.dp))
+                            .padding(vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.to_follow),
+                            color = JaguarGray,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                week.workouts.forEach { workout ->
+                    WorkoutCard(workout = workout)
+                }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
+@Composable
+fun WorkoutCard(workout: Workout) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = if (workout.isCurrent) JaguarGreen else JaguarBorder,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        colors = CardDefaults.cardColors(containerColor = JaguarCard),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (workout.isCurrent) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(JaguarTeal, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = workout.day,
+                        color = if (workout.isCurrent) JaguarTeal else JaguarGray,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+                Text(
+                    text = workout.name,
+                    color = JaguarWhite,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(workout.difficultyColor, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = workout.difficulty,
+                            color = JaguarGray,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(R.string.duration_format, workout.duration),
+                            color = JaguarGray,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.exercises_count, workout.exercises),
+                        color = JaguarGray,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
+            if (workout.isLocked) {
+                Icon(Icons.Default.Lock, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
+            } else {
+                IconButton(
+                    onClick = { /* TODO */ },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(JaguarTeal, CircleShape)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = JaguarBlack)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun JaguarBottomNavigation() {
+    NavigationBar(
+        containerColor = JaguarBlack,
+        tonalElevation = 0.dp,
+        modifier = Modifier.height(80.dp)
+    ) {
+        val items = listOf(
+            Triple(stringResource(R.string.nav_inicio), Icons.Default.Home, true),
+            Triple(stringResource(R.string.nav_historial), Icons.Default.History, false),
+            Triple(stringResource(R.string.nav_ranking), Icons.Default.EmojiEvents, false),
+            Triple(stringResource(R.string.nav_perfil), Icons.Default.Person, false)
+        )
+
+        items.forEach { (label, icon, selected) ->
+            NavigationBarItem(
+                selected = selected,
+                onClick = { /* TODO */ },
+                icon = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            icon,
+                            contentDescription = label,
+                            tint = if (selected) JaguarTeal else JaguarGray,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        if (selected) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .width(20.dp)
+                                    .height(3.dp)
+                                    .background(JaguarGreen, RoundedCornerShape(2.dp))
+                            )
+                        }
+                    }
+                },
+                label = {
+                    Text(
+                        text = label,
+                        color = if (selected) JaguarTeal else JaguarGray,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = Color.Transparent,
+                    selectedIconColor = JaguarTeal,
+                    unselectedIconColor = JaguarGray,
+                    selectedTextColor = JaguarTeal,
+                    unselectedTextColor = JaguarGray
+                )
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0A)
 @Composable
 fun HomeScreenPreview() {
     JaguarTrackerTheme {
