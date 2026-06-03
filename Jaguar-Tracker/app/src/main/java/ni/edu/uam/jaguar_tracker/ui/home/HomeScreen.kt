@@ -55,7 +55,10 @@ data class Week(
 )
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    onNewRoutineClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     var routines by remember {
         mutableStateOf(
             listOf(
@@ -153,7 +156,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             // Nueva Rutina Button
             item {
                 Button(
-                    onClick = { /* TODO */ },
+                    onClick = onNewRoutineClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),

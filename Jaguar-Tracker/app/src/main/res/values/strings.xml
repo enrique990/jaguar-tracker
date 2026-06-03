@@ -39,4 +39,34 @@
     <string name="nav_historial">Historial</string>
     <string name="nav_ranking">Ranking</string>
     <string name="nav_perfil">Perfil</string>
+
+    <!-- New Routine Screen -->
+    <string name="back_button">Volver</string>
+    <string name="routine_title">Rutina</string>
+    <string name="plan_mesocycle_subtitle">Planifica tu mesociclo</string>
+    <string name="routine_name_label">Nombre de la Rutina</string>
+    <string name="routine_name_placeholder">ej. Mesociclo Fuerza</string>
+    <string name="training_days_label">Días de Entrenamiento</string>
+    <string name="any_day">Cualquier día</string>
+    <string name="custom_day">Personalizado</string>
+    <string name="day_name_label">Nombre del Día</string>
+    <string name="day_name_placeholder">ej. Día 1 - Pecho</string>
+    <string name="exercises_label">Ejercicios</string>
+    <string name="add_exercise">+ Agregar</string>
+    <string name="sets_label">Series</string>
+    <string name="reps_label">Repeticiones</string>
+    <string name="rir_rpe_label">RIR / RPE</string>
+    <string name="rest_label">Descanso (seg)</string>
+    <string name="advanced_options_label">Opciones Avanzadas</string>
+    <string name="plan_mesocycle_switch_label">Planificar Mesociclo</string>
+    <string name="plan_mesocycle_switch_subtitle">Planifica semanas completas</string>
+    <string name="microcycles_number_label">Número de Microciclos (Semanas)</string>
+    <string name="weekly_planning_label">Planificación por Semana</string>
+    <string name="week_number">Semana %1$d</string>
+    <string name="intensity_label">Intensidad</string>
+    <string name="volume_label">Volumen</string>
+    <string name="config_button">Configurar →</string>
+    <string name="create_routine_button">Crear Rutina</string>
+    <string name="low_intensity">Baja</string>
+    <string name="normal_volume">Normal</string>
 </resources>

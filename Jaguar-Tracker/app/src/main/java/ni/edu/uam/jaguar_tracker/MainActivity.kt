@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
+import ni.edu.uam.jaguar_tracker.ui.routine.NewRoutineScreen
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
 
 // Herencia -> MainActivity hereda de ComponentActivity, fundamental en Android
@@ -41,7 +42,14 @@ fun JaguarTrackerNavHost() {
             }
         }
         composable("home") {
-            HomeScreen()
+            HomeScreen(
+                onNewRoutineClick = { navController.navigate("new_routine") },
+            )
+        }
+        composable("new_routine") {
+            NewRoutineScreen {
+                navController.popBackStack()
+            }
         }
     }
 }
