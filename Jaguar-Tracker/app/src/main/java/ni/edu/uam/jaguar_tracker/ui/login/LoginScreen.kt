@@ -1,28 +1,34 @@
 package ni.edu.uam.jaguar_tracker.ui.login
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
+import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTeal
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-// Composición -> Construimos la vista ensamblando funciones más pequeñas.
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onLoginSuccess: () -> Unit
 ) {
-    // Observamos el flujo de datos encapsulado
     val state by viewModel.uiState.collectAsState()
 
-    // Efecto secundario para navegación
     LaunchedEffect(state.loginExitoso) {
         if (state.loginExitoso) {
             onLoginSuccess()
@@ -42,9 +48,13 @@ fun LoginContent(
     state: LoginState,
     onCorreoCambiado: (String) -> Unit,
     onContrasenaCambiada: (String) -> Unit,
-    onIniciarSesion: () -> Unit
+    onIniciarSesion: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Scaffold { paddingValues ->
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,38 +63,108 @@ fun LoginContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Logo GYM
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(id = R.string.gym_logo_text),
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        color = JaguarTeal,
+                        fontWeight = FontWeight.Black
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Titles
             Text(
-                text = "Jaguar Tracker",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 32.dp)
+                text = stringResource(id = R.string.gym_title),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
             )
 
-            // Ley de Proximidad: Inputs agrupados cerca del botón
+            Text(
+                text = stringResource(id = R.string.exclusive_access),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Correo Input
+            Text(
+                text = stringResource(id = R.string.correo_label),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 8.dp)
+            )
             OutlinedTextField(
                 value = state.correo,
                 onValueChange = onCorreoCambiado,
-                label = { Text("Correo Electrónico") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                isError = state.error != null
+                placeholder = {
+                    Text(
+                        text = stringResource(id = R.string.correo_placeholder),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedBorderColor = MaterialTheme.colorScheme.outline,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                ),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Contrasena Input
+            Text(
+                text = stringResource(id = R.string.contrasena_label),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 8.dp)
+            )
             OutlinedTextField(
                 value = state.contrasena,
                 onValueChange = onContrasenaCambiada,
-                label = { Text("Contraseña") },
+                placeholder = {
+                    Text(
+                        text = stringResource(id = R.string.contrasena_placeholder),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedBorderColor = MaterialTheme.colorScheme.outline,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                ),
+                singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                isError = state.error != null
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
-            // Espacio dinámico para mensajes de error (UX)
             if (state.error != null) {
                 Text(
                     text = state.error,
@@ -92,26 +172,35 @@ fun LoginContent(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
                         .align(Alignment.Start)
-                        .padding(bottom = 16.dp)
+                        .padding(top = 4.dp)
                 )
-            } else {
-                Spacer(modifier = Modifier.height(16.dp))
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Login Button
             Button(
                 onClick = onIniciarSesion,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = JaguarTeal,
+                    contentColor = Color.Black
+                ),
                 enabled = !state.cargando
             ) {
                 if (state.cargando) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = Color.Black
                     )
                 } else {
-                    Text("Iniciar Sesión")
+                    Text(
+                        text = stringResource(id = R.string.entrar_button),
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
             }
         }

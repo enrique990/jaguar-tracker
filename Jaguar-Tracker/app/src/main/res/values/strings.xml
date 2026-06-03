@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Jaguar-Tracker</string>
+    <string name="gym_title">Gimnasio Universitario</string>
+    <string name="exclusive_access">Acceso exclusivo para estudiantes</string>
+    <string name="correo_label">Correo Institucional</string>
+    <string name="correo_placeholder">ejemplo@uamv.edu.ni</string>
+    <string name="contrasena_label">Contraseña</string>
+    <string name="contrasena_placeholder">Ingresa tu contraseña</string>
+    <string name="entrar_button">Entrar</string>
+    <string name="gym_logo_text">GYM</string>
 </resources>
