@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -160,11 +161,17 @@ fun HomeScreen(
             }
 
             // Weeks
-            items(weeks) { week ->
-                WeekAccordion(
-                    week = week,
-                    onStartWorkoutClick = onStartWorkoutClick
-                )
+            if (routines.isEmpty()) {
+                item {
+                    EmptyHomeRoutineCard()
+                }
+            } else {
+                items(weeks) { week ->
+                    WeekAccordion(
+                        week = week,
+                        onStartWorkoutClick = onStartWorkoutClick
+                    )
+                }
             }
 
             // Agregar Semana Button
@@ -510,5 +517,34 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
             isExpanded = weekNumber == 1,
             hasEmoji = routine.isSelected && weekNumber == 1
         )
+    }
+}
+@Composable
+fun EmptyHomeRoutineCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(JaguarSurface, RoundedCornerShape(12.dp))
+            .border(1.dp, JaguarBorder, RoundedCornerShape(12.dp))
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "No hay rutinas creadas",
+                color = JaguarWhite,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Presioná “Nueva Rutina” para crear tu primer entrenamiento.",
+                color = JaguarGray,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }

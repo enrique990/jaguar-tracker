@@ -9,22 +9,7 @@ import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
 
 object RoutineRepository {
 
-    private val _routines = MutableStateFlow(
-        listOf(
-            RoutineModel(
-                id = 1,
-                name = "Fuerza",
-                weeks = 4,
-                isSelected = true,
-                hasEmoji = true
-            ),
-            RoutineModel(
-                id = 2,
-                name = "Hipertrofia",
-                weeks = 4
-            )
-        )
-    )
+    private val _routines = MutableStateFlow<List<RoutineModel>>(emptyList())
 
     val routines: StateFlow<List<RoutineModel>> = _routines.asStateFlow()
 
