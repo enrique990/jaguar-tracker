@@ -33,7 +33,7 @@ Frontend (Mobile)
 * Arquitectura: MVVM (Model-View-ViewModel).
 * Persistencia: Room Persistence Library para base de datos local.
 * Red: Retrofit para consumo de servicios REST.
-* Gradle: 9.3.1
+* Gradle: 9.4.0
 
 Backend
 

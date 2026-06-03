@@ -1,3 +1,87 @@
 <resources>
     <string name="app_name">Jaguar-Tracker</string>
+    <string name="gym_title">Gimnasio Universitario</string>
+    <string name="exclusive_access">Acceso exclusivo para estudiantes</string>
+    <string name="correo_label">Correo Institucional</string>
+    <string name="correo_placeholder">ejemplo@uamv.edu.ni</string>
+    <string name="contrasena_label">Contraseña</string>
+    <string name="contrasena_placeholder">Ingresa tu contraseña</string>
+    <string name="entrar_button">Entrar</string>
+    <string name="gym_logo_text">GYM</string>
+
+    <!-- Home Screen -->
+    <string name="mesocycle_title">Mesociclo Fuerza-Hipertrofia</string>
+    <string name="mesocycle_subtitle">Push Pull Legs - 4 días/semana</string>
+    <string name="progress_percentage">25%</string>
+    <string name="completed_label">Completado</string>
+    <string name="routines_title">Rutinas</string>
+    <string name="routine_fuerza">Fuerza</string>
+    <string name="routine_hipertrofia">Hipertrofia</string>
+    <string name="four_weeks">4 semanas</string>
+    <string name="new_routine_button">Nueva Rutina</string>
+    <string name="week_label">Semana %1$d</string>
+    <string name="to_follow">A SEGUIR</string>
+    <string name="day_lunes">Lunes</string>
+    <string name="day_martes">Martes</string>
+    <string name="day_jueves">Jueves</string>
+    <string name="day_viernes">Viernes</string>
+    <string name="workout_pecho_triceps">Pecho y Tríceps</string>
+    <string name="workout_espalda_biceps">Espalda y Bíceps</string>
+    <string name="workout_piernas">Piernas</string>
+    <string name="workout_hombros_abdomen">Hombros y Abdomen</string>
+    <string name="difficulty_medio">Medio</string>
+    <string name="difficulty_alto">Alto</string>
+    <string name="difficulty_bajo">Bajo</string>
+    <string name="duration_format">~%1$d min</string>
+    <string name="exercises_count">%1$d ejercicios</string>
+    <string name="add_week_button">Agregar Semana</string>
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_historial">Historial</string>
+    <string name="nav_ranking">Ranking</string>
+    <string name="nav_perfil">Perfil</string>
+
+    <!-- New Routine Screen -->
+    <string name="back_button">Volver</string>
+    <string name="routine_title">Rutina</string>
+    <string name="plan_mesocycle_subtitle">Planifica tu mesociclo</string>
+    <string name="routine_name_label">Nombre de la Rutina</string>
+    <string name="routine_name_placeholder">ej. Mesociclo Fuerza</string>
+    <string name="training_days_label">Días de Entrenamiento</string>
+    <string name="any_day">Cualquier día</string>
+    <string name="custom_day">Personalizado</string>
+    <string name="day_name_label">Nombre del Día</string>
+    <string name="day_name_placeholder">ej. Día 1 - Pecho</string>
+    <string name="exercises_label">Ejercicios</string>
+    <string name="add_exercise">+ Agregar</string>
+    <string name="sets_label">Series</string>
+    <string name="reps_label">Repeticiones</string>
+    <string name="rir_rpe_label">RIR / RPE</string>
+    <string name="rest_label">Descanso (seg)</string>
+    <string name="advanced_options_label">Opciones Avanzadas</string>
+    <string name="plan_mesocycle_switch_label">Planificar Mesociclo</string>
+    <string name="plan_mesocycle_switch_subtitle">Planifica semanas completas</string>
+    <string name="microcycles_number_label">Número de Microciclos (Semanas)</string>
+    <string name="weekly_planning_label">Planificación por Semana</string>
+    <string name="week_number">Semana %1$d</string>
+    <string name="intensity_label">Intensidad</string>
+    <string name="volume_label">Volumen</string>
+    <string name="config_button">Configurar →</string>
+    <string name="create_routine_button">Crear Rutina</string>
+    <string name="low_intensity">Baja</string>
+    <string name="normal_volume">Normal</string>
+
+    <!-- Workout Session Screen -->
+    <string name="back_text">Volver</string>
+    <string name="workout_title_format">- %1$s</string>
+    <string name="unit_kg">KG</string>
+    <string name="unit_lbs">LBS</string>
+    <string name="header_serie">Serie</string>
+    <string name="header_peso">Peso (kg)</string>
+    <string name="header_reps">Reps</string>
+    <string name="header_rir">RIR</string>
+    <string name="yesterday_format">Ayer: %1$d</string>
+    <string name="weight_selector_title">Selector Visual de Peso - Barra Olimpica (20kg)</string>
+    <string name="weight_display_format">%1$d kg</string>
+    <string name="start_rest_button">Iniciar Descanso (%1$ds)</string>
+    <string name="complete_workout_button">Completar Entrenamiento</string>
 </resources>
