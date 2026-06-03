@@ -57,6 +57,7 @@ data class Week(
 @Composable
 fun HomeScreen(
     onNewRoutineClick: () -> Unit = {},
+    onStartWorkoutClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var routines by remember {
@@ -186,7 +187,10 @@ fun HomeScreen(
 
             // Weeks
             items(weeks) { week ->
-                WeekAccordion(week = week)
+                WeekAccordion(
+                    week = week,
+                    onStartWorkoutClick = onStartWorkoutClick
+                )
             }
 
             // Agregar Semana Button
@@ -256,7 +260,10 @@ fun RoutineCard(routine: Routine) {
 }
 
 @Composable
-fun WeekAccordion(week: Week) {
+fun WeekAccordion(
+    week: Week,
+    onStartWorkoutClick: () -> Unit = {}
+) {
     var expanded by remember { mutableStateOf(week.isExpanded) }
 
     Column(
@@ -315,7 +322,10 @@ fun WeekAccordion(week: Week) {
                 }
 
                 week.workouts.forEach { workout ->
-                    WorkoutCard(workout = workout)
+                    WorkoutCard(
+                        workout = workout,
+                        onStartWorkoutClick = onStartWorkoutClick
+                    )
                 }
             }
         }
@@ -323,7 +333,10 @@ fun WeekAccordion(week: Week) {
 }
 
 @Composable
-fun WorkoutCard(workout: Workout) {
+fun WorkoutCard(
+    workout: Workout,
+    onStartWorkoutClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -400,7 +413,7 @@ fun WorkoutCard(workout: Workout) {
                 Icon(Icons.Default.Lock, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
             } else {
                 IconButton(
-                    onClick = { /* TODO */ },
+                    onClick = onStartWorkoutClick,
                     modifier = Modifier
                         .size(40.dp)
                         .background(JaguarTeal, CircleShape)

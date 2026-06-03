@@ -69,4 +69,19 @@
     <string name="create_routine_button">Crear Rutina</string>
     <string name="low_intensity">Baja</string>
     <string name="normal_volume">Normal</string>
+
+    <!-- Workout Session Screen -->
+    <string name="back_text">Volver</string>
+    <string name="workout_title_format">- %1$s</string>
+    <string name="unit_kg">KG</string>
+    <string name="unit_lbs">LBS</string>
+    <string name="header_serie">Serie</string>
+    <string name="header_peso">Peso (kg)</string>
+    <string name="header_reps">Reps</string>
+    <string name="header_rir">RIR</string>
+    <string name="yesterday_format">Ayer: %1$d</string>
+    <string name="weight_selector_title">Selector Visual de Peso - Barra Olimpica (20kg)</string>
+    <string name="weight_display_format">%1$d kg</string>
+    <string name="start_rest_button">Iniciar Descanso (%1$ds)</string>
+    <string name="complete_workout_button">Completar Entrenamiento</string>
 </resources>
