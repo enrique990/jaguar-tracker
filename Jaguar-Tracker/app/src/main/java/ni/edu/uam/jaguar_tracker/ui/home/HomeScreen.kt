@@ -29,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
 
 
+
 data class Workout(
     val day: String,
     val name: String,
@@ -55,27 +56,9 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val routines by homeViewModel.routines.collectAsState()
+    val selectedRoutine = routines.firstOrNull { it.isSelected }
+    val weeks = buildWeeksFromSelectedRoutine(selectedRoutine)
 
-    var weeks by remember {
-        mutableStateOf(
-            listOf(
-                Week(
-                    1,
-                    listOf(
-                        Workout("Lunes", "Pecho y Tríceps", "Medio", Color(0xFFFFA500), 65, 8, isCurrent = true),
-                        Workout("Martes", "Espalda y Bíceps", "Alto", Color(0xFFFF4500), 70, 9, isLocked = true),
-                        Workout("Jueves", "Piernas", "Alto", Color(0xFFFF4500), 75, 7, isLocked = true),
-                        Workout("Viernes", "Hombros y Abdomen", "Bajo", Color(0xFF32CD32), 50, 6, isLocked = true)
-                    ),
-                    isExpanded = true,
-                    hasEmoji = true
-                ),
-                Week(2, emptyList()),
-                Week(3, emptyList()),
-                Week(4, emptyList())
-            )
-        )
-    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -133,10 +116,14 @@ fun HomeScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = JaguarWhite
                     )
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(routines) { routine ->
-                            RoutineCard(routine = routine)
-                        }
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {items(routines) { routine ->
+                        RoutineCard(
+                            routine = routine,
+                            onClick = {
+                                homeViewModel.selectRoutine(routine.id)
+                            }
+                        )
+                    }
                     }
                 }
             }
@@ -212,11 +199,15 @@ fun HomeScreen(
 }
 
 @Composable
-fun RoutineCard(routine: RoutineModel) {
+fun RoutineCard(
+    routine: RoutineModel,
+    onClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .width(160.dp)
             .height(72.dp)
+            .clickable { onClick() }
             .border(
                 width = 1.dp,
                 color = if (routine.isSelected) JaguarGreen else JaguarBorder,
@@ -478,5 +469,46 @@ fun JaguarBottomNavigation() {
 fun HomeScreenPreview() {
     JaguarTrackerTheme {
         HomeScreen()
+    }
+}
+fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
+    if (routine == null) {
+        return emptyList()
+    }
+
+    val defaultWorkouts = listOf(
+        Workout("Lunes", "Pecho y Tríceps", "Medio", Color(0xFFFFA500), 65, 8, isCurrent = true),
+        Workout("Martes", "Espalda y Bíceps", "Alto", Color(0xFFFF4500), 70, 9, isLocked = true),
+        Workout("Jueves", "Piernas", "Alto", Color(0xFFFF4500), 75, 7, isLocked = true),
+        Workout("Viernes", "Hombros y Abdomen", "Bajo", Color(0xFF32CD32), 50, 6, isLocked = true)
+    )
+
+    val workoutsFromRoutine =
+        if (routine.exercises.isEmpty()) {
+            defaultWorkouts
+        } else {
+            val days = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado")
+
+            routine.exercises.mapIndexed { index, exercise ->
+                Workout(
+                    day = days[index % days.size],
+                    name = exercise.name,
+                    difficulty = "Medio",
+                    difficultyColor = Color(0xFFFFA500),
+                    duration = 45,
+                    exercises = 1,
+                    isLocked = index != 0,
+                    isCurrent = index == 0
+                )
+            }
+        }
+
+    return (1..routine.weeks).map { weekNumber ->
+        Week(
+            number = weekNumber,
+            workouts = if (weekNumber == 1) workoutsFromRoutine else emptyList(),
+            isExpanded = weekNumber == 1,
+            hasEmoji = routine.isSelected && weekNumber == 1
+        )
     }
 }

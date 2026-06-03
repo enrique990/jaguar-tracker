@@ -8,4 +8,8 @@ import ni.edu.uam.jaguar_tracker.data.repository.RoutineRepository
 class HomeViewModel : ViewModel() {
 
     val routines: StateFlow<List<RoutineModel>> = RoutineRepository.routines
+
+    fun selectRoutine(routineId: Int) {
+        RoutineRepository.selectRoutine(routineId)
+    }
 }

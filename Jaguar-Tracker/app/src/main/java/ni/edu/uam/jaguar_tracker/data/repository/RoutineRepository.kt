@@ -54,4 +54,14 @@ object RoutineRepository {
             )
         }
     }
+    fun selectRoutine(routineId: Int) {
+        _routines.update { currentRoutines ->
+            currentRoutines.map { routine ->
+                routine.copy(
+                    isSelected = routine.id == routineId,
+                    hasEmoji = routine.id == routineId
+                )
+            }
+        }
+    }
 }
