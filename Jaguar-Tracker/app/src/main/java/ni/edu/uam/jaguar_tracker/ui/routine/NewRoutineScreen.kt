@@ -5,12 +5,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,22 +40,39 @@ fun NewRoutineScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(state.wasSaved) {
+        if (state.wasSaved) {
+            onBack()
+        }
+    }
+
     NewRoutineContent(
         state = state,
         onBack = onBack,
         onRoutineNameChange = viewModel::updateRoutineName,
-        onCreateRoutine = viewModel::saveRoutine
+        onCreateRoutine = viewModel::saveRoutine,
+        onOpenExerciseSheet = { viewModel.toggleSheetVisibility(true) },
+        onCloseExerciseSheet = { viewModel.toggleSheetVisibility(false) },
+        onExerciseSelected = viewModel::toggleExerciseSelection,
+        onRemoveExercise = viewModel::removeExercise
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewRoutineContent(
     state: NewRoutineUiState,
     onBack: () -> Unit,
     onRoutineNameChange: (String) -> Unit,
     onCreateRoutine: () -> Unit,
+    onOpenExerciseSheet: () -> Unit,
+    onCloseExerciseSheet: () -> Unit,
+    onExerciseSelected: (Int) -> Unit,
+    onRemoveExercise: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
@@ -74,6 +97,7 @@ fun NewRoutineContent(
         },
         modifier = modifier
     ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -81,7 +105,6 @@ fun NewRoutineContent(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -110,7 +133,9 @@ fun NewRoutineContent(
                         )
                     }
                 }
+
                 Spacer(modifier = Modifier.width(12.dp))
+
                 Text(
                     text = stringResource(R.string.routine_title),
                     style = MaterialTheme.typography.headlineMedium,
@@ -126,26 +151,36 @@ fun NewRoutineContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Routine Name
             SectionLabel(stringResource(R.string.routine_name_label))
+
             RoutineTextField(
                 value = state.routineName,
                 onValueChange = onRoutineNameChange,
                 placeholder = stringResource(R.string.routine_name_placeholder)
             )
 
+            if (state.error != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = state.error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Training Days
             SectionLabel(stringResource(R.string.training_days_label))
             DaySelector()
+
             Spacer(modifier = Modifier.height(8.dp))
+
             NumericInput(value = 3)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Day Name
             SectionLabel(stringResource(R.string.day_name_label))
+
             RoutineTextField(
                 value = "",
                 onValueChange = {},
@@ -154,7 +189,6 @@ fun NewRoutineContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Exercises
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -165,37 +199,36 @@ fun NewRoutineContent(
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White
                 )
+
                 Text(
                     text = stringResource(R.string.add_exercise),
                     style = MaterialTheme.typography.labelLarge,
                     color = JaguarTeal,
-                    modifier = Modifier.clickable { }
+                    modifier = Modifier.clickable {
+                        onOpenExerciseSheet()
+                    }
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ExerciseCard(
-                name = "Press de Banca",
-                series = "4",
-                reps = "8-10",
-                rir = "2-3",
-                rest = "90"
-            )
+            if (state.selectedExercises.isEmpty()) {
+                EmptyExercisesCard()
+            } else {
+                state.selectedExercises.forEach { exercise ->
+                    SelectedExerciseCard(
+                        exercise = exercise,
+                        onRemoveExercise = {
+                            onRemoveExercise(exercise.id)
+                        }
+                    )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ExerciseCard(
-                name = "Press Inclinado",
-                series = "3",
-                reps = "10-12",
-                rir = "2-3",
-                rest = "90"
-            )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Advanced Options
             LabeledSwitch(
                 label = stringResource(R.string.advanced_options_label),
                 checked = true,
@@ -204,7 +237,6 @@ fun NewRoutineContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Planify Mesocycle
             LabeledSwitch(
                 label = stringResource(R.string.plan_mesocycle_switch_label),
                 subtitle = stringResource(R.string.plan_mesocycle_switch_subtitle),
@@ -214,13 +246,12 @@ fun NewRoutineContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Microcycles
             SectionLabel(stringResource(R.string.microcycles_number_label))
+
             NumericInputWithButtons(value = 4)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Weekly Planning
             Text(
                 text = stringResource(R.string.weekly_planning_label),
                 style = MaterialTheme.typography.titleMedium,
@@ -232,6 +263,257 @@ fun NewRoutineContent(
             repeat(4) { index ->
                 WeekPlanningCard(weekNumber = index + 1)
                 Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+
+    if (state.isSheetOpen) {
+        ModalBottomSheet(
+            onDismissRequest = onCloseExerciseSheet,
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = Color.White
+        ) {
+            ExerciseSelectorSheet(
+                exercises = state.availableExercises,
+                onExerciseSelected = onExerciseSelected,
+                onClose = onCloseExerciseSheet
+            )
+        }
+    }
+}
+
+@Composable
+fun ExerciseSelectorSheet(
+    exercises: List<Exercise>,
+    onExerciseSelected: (Int) -> Unit,
+    onClose: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 520.dp)
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Seleccionar ejercicios",
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = "Elegí los ejercicios que tendrá esta rutina.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.weight(1f, fill = false)
+        ) {
+            items(exercises) { exercise ->
+                ExerciseSelectorItem(
+                    exercise = exercise,
+                    onClick = {
+                        onExerciseSelected(exercise.id)
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onClose,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = JaguarTeal,
+                contentColor = Color.Black
+            )
+        ) {
+            Text(
+                text = "Listo",
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun ExerciseSelectorItem(
+    exercise: Exercise,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (exercise.isSelected) JaguarTeal else MaterialTheme.colorScheme.outline
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (exercise.isSelected) JaguarTeal else Color.Black
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (exercise.isSelected) JaguarTeal else MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (exercise.isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    text = exercise.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "${exercise.sets} series x ${exercise.reps} reps",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyExercisesCard() {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                tint = JaguarTeal,
+                modifier = Modifier.size(32.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Todavía no agregaste ejercicios",
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = "Presioná “Agregar ejercicio” para seleccionar ejercicios disponibles.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@Composable
+fun SelectedExerciseCard(
+    exercise: Exercise,
+    onRemoveExercise: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = exercise.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+
+                IconButton(onClick = onRemoveExercise) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ExerciseField(
+                    label = stringResource(R.string.sets_label),
+                    value = exercise.sets.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                ExerciseField(
+                    label = stringResource(R.string.reps_label),
+                    value = exercise.reps.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ExerciseField(
+                    label = stringResource(R.string.rir_rpe_label),
+                    value = "2-3",
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                ExerciseField(
+                    label = stringResource(R.string.rest_label),
+                    value = "90",
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -300,6 +582,7 @@ fun DaySelector() {
                 color = Color.Black
             )
         }
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -336,73 +619,6 @@ fun NumericInput(value: Int) {
 }
 
 @Composable
-fun ExerciseCard(
-    name: String,
-    series: String,
-    reps: String,
-    rir: String,
-    rest: String
-) {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
-                )
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                ExerciseField(
-                    label = stringResource(R.string.sets_label),
-                    value = series,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                ExerciseField(
-                    label = stringResource(R.string.reps_label),
-                    value = reps,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                ExerciseField(
-                    label = stringResource(R.string.rir_rpe_label),
-                    value = rir,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                ExerciseField(
-                    label = stringResource(R.string.rest_label),
-                    value = rest,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun ExerciseField(
     label: String,
     value: String,
@@ -415,6 +631,7 @@ fun ExerciseField(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
+
         OutlinedTextField(
             value = value,
             onValueChange = {},
@@ -456,6 +673,7 @@ fun LabeledSwitch(
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White
                 )
+
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
@@ -464,6 +682,7 @@ fun LabeledSwitch(
                     )
                 }
             }
+
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
@@ -541,6 +760,7 @@ fun WeekPlanningCard(weekNumber: Int) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -552,6 +772,7 @@ fun WeekPlanningCard(weekNumber: Int) {
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
+
                 Text(
                     text = stringResource(R.string.config_button),
                     style = MaterialTheme.typography.labelLarge,
@@ -568,7 +789,9 @@ fun WeekPlanningCard(weekNumber: Int) {
                     value = stringResource(R.string.low_intensity),
                     modifier = Modifier.weight(1f)
                 )
+
                 Spacer(modifier = Modifier.width(12.dp))
+
                 DropdownField(
                     label = stringResource(R.string.volume_label),
                     value = stringResource(R.string.normal_volume),
@@ -592,6 +815,7 @@ fun DropdownField(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
+
         Surface(
             shape = RoundedCornerShape(8.dp),
             color = Color.Black,
@@ -610,6 +834,7 @@ fun DropdownField(
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White
                 )
+
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
@@ -627,11 +852,24 @@ fun NewRoutineScreenPreview() {
     JaguarTrackerTheme {
         NewRoutineContent(
             state = NewRoutineUiState(
-                routineName = "Mesociclo Fuerza"
+                routineName = "Mesociclo Fuerza",
+                selectedExercises = listOf(
+                    Exercise(1, "Press de banca", sets = 4, reps = 10),
+                    Exercise(2, "Press inclinado", sets = 3, reps = 12)
+                ),
+                availableExercises = listOf(
+                    Exercise(1, "Press de banca", sets = 4, reps = 10, isSelected = true),
+                    Exercise(2, "Press inclinado", sets = 3, reps = 12, isSelected = true),
+                    Exercise(3, "Sentadillas", sets = 4, reps = 8)
+                )
             ),
             onBack = {},
             onRoutineNameChange = {},
-            onCreateRoutine = {}
+            onCreateRoutine = {},
+            onOpenExerciseSheet = {},
+            onCloseExerciseSheet = {},
+            onExerciseSelected = {},
+            onRemoveExercise = {}
         )
     }
 }

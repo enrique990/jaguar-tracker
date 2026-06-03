@@ -1,0 +1,57 @@
+package ni.edu.uam.jaguar_tracker.data.repository
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import ni.edu.uam.jaguar_tracker.data.model.ExerciseModel
+import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
+
+object RoutineRepository {
+
+    private val _routines = MutableStateFlow(
+        listOf(
+            RoutineModel(
+                id = 1,
+                name = "Fuerza",
+                weeks = 4,
+                isSelected = true,
+                hasEmoji = true
+            ),
+            RoutineModel(
+                id = 2,
+                name = "Hipertrofia",
+                weeks = 4
+            )
+        )
+    )
+
+    val routines: StateFlow<List<RoutineModel>> = _routines.asStateFlow()
+
+    fun addRoutine(
+        name: String,
+        exercises: List<ExerciseModel>,
+        weeks: Int = 4
+    ) {
+        _routines.update { currentRoutines ->
+
+            val nextId = (currentRoutines.maxOfOrNull { it.id } ?: 0) + 1
+
+            val updatedRoutines = currentRoutines.map {
+                it.copy(
+                    isSelected = false,
+                    hasEmoji = false
+                )
+            }
+
+            updatedRoutines + RoutineModel(
+                id = nextId,
+                name = name.trim(),
+                weeks = weeks,
+                exercises = exercises,
+                isSelected = true,
+                hasEmoji = true
+            )
+        }
+    }
+}

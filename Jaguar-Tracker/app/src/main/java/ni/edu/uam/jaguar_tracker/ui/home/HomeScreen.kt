@@ -18,23 +18,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
 
-data class Routine(
-    val id: Int,
-    val name: String,
-    val weeks: Int,
-    val isSelected: Boolean = false,
-    val hasEmoji: Boolean = false
-)
 
 data class Workout(
     val day: String,
@@ -58,16 +51,10 @@ data class Week(
 fun HomeScreen(
     onNewRoutineClick: () -> Unit = {},
     onStartWorkoutClick: () -> Unit = {},
+    homeViewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
-    var routines by remember {
-        mutableStateOf(
-            listOf(
-                Routine(1, "Fuerza", 4, isSelected = true, hasEmoji = true),
-                Routine(2, "Hipertrofia", 4)
-            )
-        )
-    }
+    val routines by homeViewModel.routines.collectAsState()
 
     var weeks by remember {
         mutableStateOf(
@@ -225,7 +212,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun RoutineCard(routine: Routine) {
+fun RoutineCard(routine: RoutineModel) {
     Card(
         modifier = Modifier
             .width(160.dp)
@@ -250,8 +237,9 @@ fun RoutineCard(routine: Routine) {
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyMedium
             )
+
             Text(
-                text = stringResource(R.string.four_weeks),
+                text = "${routine.weeks} semanas",
                 color = JaguarGray,
                 style = MaterialTheme.typography.labelSmall
             )
