@@ -9,13 +9,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,11 +51,24 @@ fun NewRoutineScreen(
         state = state,
         onBack = onBack,
         onRoutineNameChange = viewModel::updateRoutineName,
+        onTrainingDaysChange = viewModel::updateTrainingDays,
+        onDayModeChange = viewModel::updateDayMode,
+        onWeekDayToggle = viewModel::toggleWeekDay,
+        onAdvancedOptionsChange = viewModel::updateAdvancedOptions,
+        onPlanMesocycleChange = viewModel::updatePlanMesocycle,
+        onIncreaseMicrocycles = viewModel::increaseMicrocycles,
+        onDecreaseMicrocycles = viewModel::decreaseMicrocycles,
+        onWeeklyIntensityChange = viewModel::updateWeeklyIntensity,
+        onWeeklyVolumeChange = viewModel::updateWeeklyVolume,
         onCreateRoutine = viewModel::saveRoutine,
         onOpenExerciseSheet = { viewModel.toggleSheetVisibility(true) },
         onCloseExerciseSheet = { viewModel.toggleSheetVisibility(false) },
         onExerciseSelected = viewModel::toggleExerciseSelection,
-        onRemoveExercise = viewModel::removeExercise
+        onRemoveExercise = viewModel::removeExercise,
+        onExerciseSetsChange = viewModel::updateExerciseSets,
+        onExerciseRepsChange = viewModel::updateExerciseReps,
+        onExerciseRirChange = viewModel::updateExerciseRir,
+        onExerciseRestChange = viewModel::updateExerciseRest
     )
 }
 
@@ -64,11 +78,24 @@ fun NewRoutineContent(
     state: NewRoutineUiState,
     onBack: () -> Unit,
     onRoutineNameChange: (String) -> Unit,
+    onTrainingDaysChange: (String) -> Unit,
+    onDayModeChange: (Boolean) -> Unit,
+    onWeekDayToggle: (String) -> Unit,
+    onAdvancedOptionsChange: (Boolean) -> Unit,
+    onPlanMesocycleChange: (Boolean) -> Unit,
+    onIncreaseMicrocycles: () -> Unit,
+    onDecreaseMicrocycles: () -> Unit,
+    onWeeklyIntensityChange: (Int, String) -> Unit,
+    onWeeklyVolumeChange: (Int, String) -> Unit,
     onCreateRoutine: () -> Unit,
     onOpenExerciseSheet: () -> Unit,
     onCloseExerciseSheet: () -> Unit,
     onExerciseSelected: (Int) -> Unit,
     onRemoveExercise: (Int) -> Unit,
+    onExerciseSetsChange: (Int, String) -> Unit,
+    onExerciseRepsChange: (Int, String) -> Unit,
+    onExerciseRirChange: (Int, String) -> Unit,
+    onExerciseRestChange: (Int, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -105,43 +132,7 @@ fun NewRoutineContent(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Surface(
-                    onClick = onBack,
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.height(32.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.back_button),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Text(
-                    text = stringResource(R.string.routine_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White
-                )
-            }
+            HeaderSection(onBack = onBack)
 
             Text(
                 text = stringResource(R.string.plan_mesocycle_subtitle),
@@ -171,98 +162,111 @@ fun NewRoutineContent(
             Spacer(modifier = Modifier.height(24.dp))
 
             SectionLabel(stringResource(R.string.training_days_label))
-            DaySelector()
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            NumericInput(value = 3)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SectionLabel(stringResource(R.string.day_name_label))
-
-            RoutineTextField(
-                value = "",
-                onValueChange = {},
-                placeholder = stringResource(R.string.day_name_placeholder)
+            DaySelector(
+                isCustomDay = state.isCustomDay,
+                onModeChange = onDayModeChange
             )
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (state.isCustomDay) {
+                WeekDaySelector(
+                    selectedDays = state.selectedWeekDays,
+                    onDayClick = onWeekDayToggle
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Días seleccionados: ${state.selectedWeekDays.size}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                NumericInput(
+                    value = state.trainingDaysText,
+                    onValueChange = onTrainingDaysChange
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.exercises_label),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White
-                )
-
-                Text(
-                    text = stringResource(R.string.add_exercise),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = JaguarTeal,
-                    modifier = Modifier.clickable {
-                        onOpenExerciseSheet()
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (state.selectedExercises.isEmpty()) {
-                EmptyExercisesCard()
-            } else {
-                state.selectedExercises.forEach { exercise ->
-                    SelectedExerciseCard(
-                        exercise = exercise,
-                        onRemoveExercise = {
-                            onRemoveExercise(exercise.id)
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
+            ExercisesSection(
+                selectedExercises = state.selectedExercises,
+                onOpenExerciseSheet = onOpenExerciseSheet,
+                onRemoveExercise = onRemoveExercise,
+                onExerciseSetsChange = onExerciseSetsChange,
+                onExerciseRepsChange = onExerciseRepsChange,
+                onExerciseRirChange = onExerciseRirChange,
+                onExerciseRestChange = onExerciseRestChange
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             LabeledSwitch(
                 label = stringResource(R.string.advanced_options_label),
-                checked = true,
-                onCheckedChange = {}
+                checked = state.advancedOptionsEnabled,
+                onCheckedChange = onAdvancedOptionsChange
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            LabeledSwitch(
-                label = stringResource(R.string.plan_mesocycle_switch_label),
-                subtitle = stringResource(R.string.plan_mesocycle_switch_subtitle),
-                checked = true,
-                onCheckedChange = {}
-            )
+            if (state.advancedOptionsEnabled) {
+                LabeledSwitch(
+                    label = stringResource(R.string.plan_mesocycle_switch_label),
+                    subtitle = stringResource(R.string.plan_mesocycle_switch_subtitle),
+                    checked = state.planMesocycleEnabled,
+                    onCheckedChange = onPlanMesocycleChange
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            SectionLabel(stringResource(R.string.microcycles_number_label))
+                SectionLabel(stringResource(R.string.microcycles_number_label))
 
-            NumericInputWithButtons(value = 4)
+                NumericInputWithButtons(
+                    value = state.microcycles,
+                    onDecrease = onDecreaseMicrocycles,
+                    onIncrease = onIncreaseMicrocycles
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = stringResource(R.string.weekly_planning_label),
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White
-            )
+                Text(
+                    text = stringResource(R.string.weekly_planning_label),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            repeat(4) { index ->
-                WeekPlanningCard(weekNumber = index + 1)
-                Spacer(modifier = Modifier.height(12.dp))
+                if (state.planMesocycleEnabled) {
+                    state.weeklyPlans.forEach { weekPlan ->
+                        WeekPlanningCard(
+                            weekPlan = weekPlan,
+                            onIntensityChange = { value ->
+                                onWeeklyIntensityChange(weekPlan.weekNumber, value)
+                            },
+                            onVolumeChange = { value ->
+                                onWeeklyVolumeChange(weekPlan.weekNumber, value)
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                } else {
+                    Text(
+                        text = "La planificación semanal está desactivada.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            } else {
+                Text(
+                    text = "Las opciones avanzadas están desactivadas.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }
@@ -279,6 +283,112 @@ fun NewRoutineContent(
                 onExerciseSelected = onExerciseSelected,
                 onClose = onCloseExerciseSheet
             )
+        }
+    }
+}
+
+@Composable
+fun HeaderSection(
+    onBack: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Surface(
+            onClick = onBack,
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.height(32.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = Color.White
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    text = stringResource(R.string.back_button),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Text(
+            text = stringResource(R.string.routine_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+fun ExercisesSection(
+    selectedExercises: List<Exercise>,
+    onOpenExerciseSheet: () -> Unit,
+    onRemoveExercise: (Int) -> Unit,
+    onExerciseSetsChange: (Int, String) -> Unit,
+    onExerciseRepsChange: (Int, String) -> Unit,
+    onExerciseRirChange: (Int, String) -> Unit,
+    onExerciseRestChange: (Int, String) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.exercises_label),
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White
+        )
+
+        Text(
+            text = stringResource(R.string.add_exercise),
+            style = MaterialTheme.typography.labelLarge,
+            color = JaguarTeal,
+            modifier = Modifier.clickable {
+                onOpenExerciseSheet()
+            }
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    if (selectedExercises.isEmpty()) {
+        EmptyExercisesCard()
+    } else {
+        selectedExercises.forEach { exercise ->
+            SelectedExerciseCard(
+                exercise = exercise,
+                onRemoveExercise = {
+                    onRemoveExercise(exercise.id)
+                },
+                onSetsChange = { value ->
+                    onExerciseSetsChange(exercise.id, value)
+                },
+                onRepsChange = { value ->
+                    onExerciseRepsChange(exercise.id, value)
+                },
+                onRirChange = { value ->
+                    onExerciseRirChange(exercise.id, value)
+                },
+                onRestChange = { value ->
+                    onExerciseRestChange(exercise.id, value)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
@@ -450,7 +560,11 @@ fun EmptyExercisesCard() {
 @Composable
 fun SelectedExerciseCard(
     exercise: Exercise,
-    onRemoveExercise: () -> Unit
+    onRemoveExercise: () -> Unit,
+    onSetsChange: (String) -> Unit,
+    onRepsChange: (String) -> Unit,
+    onRirChange: (String) -> Unit,
+    onRestChange: (String) -> Unit
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -483,17 +597,20 @@ fun SelectedExerciseCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(modifier = Modifier.fillMaxWidth()) {
-                ExerciseField(
+                EditableExerciseField(
                     label = stringResource(R.string.sets_label),
-                    value = exercise.sets.toString(),
-                    modifier = Modifier.weight(1f)
+                    value = exercise.sets,
+                    onValueChange = onSetsChange,
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Number
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                ExerciseField(
+                EditableExerciseField(
                     label = stringResource(R.string.reps_label),
-                    value = exercise.reps.toString(),
+                    value = exercise.reps,
+                    onValueChange = onRepsChange,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -501,21 +618,59 @@ fun SelectedExerciseCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(modifier = Modifier.fillMaxWidth()) {
-                ExerciseField(
+                EditableExerciseField(
                     label = stringResource(R.string.rir_rpe_label),
-                    value = "2-3",
+                    value = exercise.rir,
+                    onValueChange = onRirChange,
                     modifier = Modifier.weight(1f)
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                ExerciseField(
+                EditableExerciseField(
                     label = stringResource(R.string.rest_label),
-                    value = "90",
-                    modifier = Modifier.weight(1f)
+                    value = exercise.restSeconds,
+                    onValueChange = onRestChange,
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Number
                 )
             }
         }
+    }
+}
+
+@Composable
+fun EditableExerciseField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.Black,
+                unfocusedContainerColor = Color.Black,
+                focusedBorderColor = MaterialTheme.colorScheme.outline,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            singleLine = true
+        )
     }
 }
 
@@ -534,11 +689,13 @@ fun RoutineTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
+        enabled = enabled,
         placeholder = {
             Text(
                 text = placeholder,
@@ -550,17 +707,23 @@ fun RoutineTextField(
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             focusedBorderColor = MaterialTheme.colorScheme.outline,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            disabledBorderColor = MaterialTheme.colorScheme.outline,
             focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
+            unfocusedTextColor = Color.White,
+            disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
         singleLine = true
     )
 }
 
 @Composable
-fun DaySelector() {
+fun DaySelector(
+    isCustomDay: Boolean,
+    onModeChange: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -573,13 +736,14 @@ fun DaySelector() {
                 .weight(1f)
                 .height(40.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(JaguarTeal),
+                .background(if (!isCustomDay) JaguarTeal else Color.Transparent)
+                .clickable { onModeChange(false) },
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = stringResource(R.string.any_day),
                 style = MaterialTheme.typography.labelLarge,
-                color = Color.Black
+                color = if (!isCustomDay) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -587,23 +751,86 @@ fun DaySelector() {
             modifier = Modifier
                 .weight(1f)
                 .height(40.dp)
-                .clip(RoundedCornerShape(8.dp)),
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isCustomDay) JaguarTeal else Color.Transparent)
+                .clickable { onModeChange(true) },
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = stringResource(R.string.custom_day),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isCustomDay) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
 @Composable
-fun NumericInput(value: Int) {
+fun WeekDaySelector(
+    selectedDays: Set<String>,
+    onDayClick: (String) -> Unit
+) {
+    val days = listOf(
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+        "Sábado",
+        "Domingo"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        days.chunked(2).forEach { rowDays ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowDays.forEach { day ->
+                    val selected = selectedDays.contains(day)
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected) JaguarTeal
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = if (selected) JaguarTeal else MaterialTheme.colorScheme.outline,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .clickable { onDayClick(day) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = day,
+                            color = if (selected) Color.Black else Color.White,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                if (rowDays.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NumericInput(
+    value: String,
+    onValueChange: (String) -> Unit
+) {
     OutlinedTextField(
-        value = value.toString(),
-        onValueChange = {},
+        value = value,
+        onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
@@ -614,40 +841,9 @@ fun NumericInput(value: Int) {
             focusedTextColor = Color.White,
             unfocusedTextColor = Color.White
         ),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true
     )
-}
-
-@Composable
-fun ExerciseField(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.Black,
-                unfocusedContainerColor = Color.Black,
-                focusedBorderColor = MaterialTheme.colorScheme.outline,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
-            ),
-            singleLine = true
-        )
-    }
 }
 
 @Composable
@@ -698,7 +894,11 @@ fun LabeledSwitch(
 }
 
 @Composable
-fun NumericInputWithButtons(value: Int) {
+fun NumericInputWithButtons(
+    value: Int,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -707,7 +907,7 @@ fun NumericInputWithButtons(value: Int) {
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.size(48.dp),
-            onClick = {}
+            onClick = onDecrease
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text("-", color = Color.White, fontSize = 24.sp)
@@ -740,7 +940,7 @@ fun NumericInputWithButtons(value: Int) {
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.size(48.dp),
-            onClick = {}
+            onClick = onIncrease
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
@@ -753,7 +953,11 @@ fun NumericInputWithButtons(value: Int) {
 }
 
 @Composable
-fun WeekPlanningCard(weekNumber: Int) {
+fun WeekPlanningCard(
+    weekPlan: WeeklyPlanUi,
+    onIntensityChange: (String) -> Unit,
+    onVolumeChange: (String) -> Unit
+) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -761,32 +965,21 @@ fun WeekPlanningCard(weekNumber: Int) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.week_number, weekNumber),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = stringResource(R.string.config_button),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = JaguarTeal,
-                    modifier = Modifier.clickable { }
-                )
-            }
+            Text(
+                text = stringResource(R.string.week_number, weekPlan.weekNumber),
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 DropdownField(
                     label = stringResource(R.string.intensity_label),
-                    value = stringResource(R.string.low_intensity),
+                    value = weekPlan.intensity,
+                    options = listOf("Baja", "Media", "Alta", "Descarga"),
+                    onValueSelected = onIntensityChange,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -794,7 +987,9 @@ fun WeekPlanningCard(weekNumber: Int) {
 
                 DropdownField(
                     label = stringResource(R.string.volume_label),
-                    value = stringResource(R.string.normal_volume),
+                    value = weekPlan.volume,
+                    options = listOf("Bajo", "Normal", "Alto"),
+                    onValueSelected = onVolumeChange,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -806,8 +1001,12 @@ fun WeekPlanningCard(weekNumber: Int) {
 fun DropdownField(
     label: String,
     value: String,
+    options: List<String>,
+    onValueSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(modifier = modifier) {
         Text(
             text = label,
@@ -816,31 +1015,57 @@ fun DropdownField(
             modifier = Modifier.padding(bottom = 4.dp)
         )
 
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = Color.Black,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+        Box {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color.Black,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .clickable { expanded = true }
             ) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White
+                    )
 
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = option,
+                                color = Color.White
+                            )
+                        },
+                        onClick = {
+                            onValueSelected(option)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
@@ -853,23 +1078,55 @@ fun NewRoutineScreenPreview() {
         NewRoutineContent(
             state = NewRoutineUiState(
                 routineName = "Mesociclo Fuerza",
+                trainingDaysText = "3",
+                isCustomDay = true,
+                selectedWeekDays = setOf("Lunes", "Miércoles", "Viernes"),
                 selectedExercises = listOf(
-                    Exercise(1, "Press de banca", sets = 4, reps = 10),
-                    Exercise(2, "Press inclinado", sets = 3, reps = 12)
+                    Exercise(
+                        id = 1,
+                        name = "Press de banca",
+                        sets = "4",
+                        reps = "10",
+                        rir = "2",
+                        restSeconds = "90",
+                        isSelected = true
+                    ),
+                    Exercise(
+                        id = 2,
+                        name = "Sentadillas",
+                        sets = "4",
+                        reps = "8",
+                        rir = "2",
+                        restSeconds = "120",
+                        isSelected = true
+                    )
                 ),
                 availableExercises = listOf(
-                    Exercise(1, "Press de banca", sets = 4, reps = 10, isSelected = true),
-                    Exercise(2, "Press inclinado", sets = 3, reps = 12, isSelected = true),
-                    Exercise(3, "Sentadillas", sets = 4, reps = 8)
+                    Exercise(1, "Press de banca", sets = "4", reps = "10", isSelected = true),
+                    Exercise(2, "Sentadillas", sets = "4", reps = "8", isSelected = true),
+                    Exercise(3, "Peso muerto", sets = "3", reps = "6")
                 )
             ),
             onBack = {},
             onRoutineNameChange = {},
+            onTrainingDaysChange = {},
+            onDayModeChange = {},
+            onWeekDayToggle = {},
+            onAdvancedOptionsChange = {},
+            onPlanMesocycleChange = {},
+            onIncreaseMicrocycles = {},
+            onDecreaseMicrocycles = {},
+            onWeeklyIntensityChange = { _, _ -> },
+            onWeeklyVolumeChange = { _, _ -> },
             onCreateRoutine = {},
             onOpenExerciseSheet = {},
             onCloseExerciseSheet = {},
             onExerciseSelected = {},
-            onRemoveExercise = {}
+            onRemoveExercise = {},
+            onExerciseSetsChange = { _, _ -> },
+            onExerciseRepsChange = { _, _ -> },
+            onExerciseRirChange = { _, _ -> },
+            onExerciseRestChange = { _, _ -> }
         )
     }
 }
