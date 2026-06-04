@@ -4,13 +4,26 @@ data class ExerciseModel(
     val id: Int,
     val name: String,
     val sets: Int = 3,
-    val reps: Int = 12
+    val reps: String = "12",
+    val rir: String = "2",
+    val restSeconds: Int = 90
+)
+
+data class WeeklyPlanModel(
+    val weekNumber: Int,
+    val intensity: String = "Media",
+    val volume: String = "Normal"
 )
 
 data class RoutineModel(
     val id: Int,
     val name: String,
     val weeks: Int = 4,
+    val trainingDays: Int = 3,
+    val useCustomDays: Boolean = false,
+    val selectedDays: List<String> = emptyList(),
+    val dayName: String = "",
+    val weeklyPlans: List<WeeklyPlanModel> = emptyList(),
     val exercises: List<ExerciseModel> = emptyList(),
     val isSelected: Boolean = false,
     val hasEmoji: Boolean = false

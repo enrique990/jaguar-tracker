@@ -6,32 +6,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import ni.edu.uam.jaguar_tracker.data.model.ExerciseModel
 import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
-
+import ni.edu.uam.jaguar_tracker.data.model.WeeklyPlanModel
 object RoutineRepository {
 
-    private val _routines = MutableStateFlow(
-        listOf(
-            RoutineModel(
-                id = 1,
-                name = "Fuerza",
-                weeks = 4,
-                isSelected = true,
-                hasEmoji = true
-            ),
-            RoutineModel(
-                id = 2,
-                name = "Hipertrofia",
-                weeks = 4
-            )
-        )
-    )
+    private val _routines = MutableStateFlow<List<RoutineModel>>(emptyList())
 
     val routines: StateFlow<List<RoutineModel>> = _routines.asStateFlow()
 
     fun addRoutine(
         name: String,
         exercises: List<ExerciseModel>,
-        weeks: Int = 4
+        weeks: Int = 4,
+        trainingDays: Int = 3,
+        useCustomDays: Boolean = false,
+        selectedDays: List<String> = emptyList(),
+        dayName: String = "",
+        weeklyPlans: List<WeeklyPlanModel> = emptyList()
     ) {
         _routines.update { currentRoutines ->
 
@@ -48,6 +38,11 @@ object RoutineRepository {
                 id = nextId,
                 name = name.trim(),
                 weeks = weeks,
+                trainingDays = trainingDays,
+                useCustomDays = useCustomDays,
+                selectedDays = selectedDays,
+                dayName = dayName,
+                weeklyPlans = weeklyPlans,
                 exercises = exercises,
                 isSelected = true,
                 hasEmoji = true

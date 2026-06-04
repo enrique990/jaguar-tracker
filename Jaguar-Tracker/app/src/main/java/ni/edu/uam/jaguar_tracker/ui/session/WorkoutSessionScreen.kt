@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 data class SetSession(
     val number: Int,
@@ -39,31 +40,14 @@ data class ExerciseSession(
 @Composable
 fun WorkoutSessionScreen(
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    sessionViewModel: WorkoutSessionViewModel = viewModel()
 ) {
+    val state by sessionViewModel.uiState.collectAsState()
+
     var isKg by remember { mutableStateOf(value = true) }
-    
-    val exercises = remember {
-        listOf(
-            ExerciseSession(
-                name = "Press de Banca",
-                sets = listOf(
-                    SetSession(1, 100, "100", "10", "2"),
-                    SetSession(2, 100, "100", "10", "2"),
-                    SetSession(3, 100, "100", "10", "2"),
-                    SetSession(4, 100, "100", "10", "2")
-                )
-            ),
-            ExerciseSession(
-                name = "Press Inclinado",
-                sets = listOf(
-                    SetSession(1, 80, "80", "12", "2"),
-                    SetSession(2, 80, "80", "12", "2"),
-                    SetSession(3, 80, "80", "12", "2")
-                )
-            )
-        )
-    }
+
+    val exercises = state.exercises
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -99,7 +83,8 @@ fun WorkoutSessionScreen(
                 WorkoutSessionHeader(
                     onBackClick = onBackClick,
                     isKg = isKg,
-                    onUnitToggle = { isKg = it }
+                    onUnitToggle = { isKg = it },
+                    routineName = state.routineName
                 )
             }
 
@@ -118,7 +103,8 @@ fun WorkoutSessionScreen(
 fun WorkoutSessionHeader(
     onBackClick: () -> Unit,
     isKg: Boolean,
-    onUnitToggle: (Boolean) -> Unit
+    onUnitToggle: (Boolean) -> Unit,
+    routineName: String
 ) {
     Column {
         Row(
@@ -169,7 +155,7 @@ fun WorkoutSessionHeader(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = stringResource(R.string.workout_title_format, "Pecho"),
+            text = stringResource(R.string.workout_title_format, routineName),
             style = MaterialTheme.typography.displayLarge.copy(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-1).sp
@@ -316,10 +302,19 @@ fun SetRow(set: SetSession) {
             style = MaterialTheme.typography.titleMedium
         )
 
+        val weightText =
+            if (set.weight.isNotBlank()) {
+                set.weight
+            } else if (set.previousWeight > 0) {
+                "Ayer: ${set.previousWeight}"
+            } else {
+                "Ayer: -"
+            }
+
         SetInputField(
-            value = "Ayer: ${set.previousWeight}",
+            value = weightText,
             modifier = Modifier.weight(2f),
-            isPlaceholder = true
+            isPlaceholder = set.weight.isBlank()
         )
 
         Spacer(modifier = Modifier.width(8.dp))
