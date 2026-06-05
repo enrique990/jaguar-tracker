@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTeal
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
+import ni.edu.uam.jaguar_tracker.ui.components.rememberSafeClick
 
 @Composable
 fun NewRoutineScreen(
@@ -99,12 +100,18 @@ fun NewRoutineContent(
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val safeBack = rememberSafeClick {
+        onBack()
+    }
 
+    val safeCreateRoutine = rememberSafeClick {
+        onCreateRoutine()
+    }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Button(
-                onClick = onCreateRoutine,
+                onClick = safeCreateRoutine,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -132,7 +139,7 @@ fun NewRoutineContent(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            HeaderSection(onBack = onBack)
+            HeaderSection(onBack = safeBack)
 
             Text(
                 text = stringResource(R.string.plan_mesocycle_subtitle),

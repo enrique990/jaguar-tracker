@@ -20,25 +20,82 @@ class LoginViewModel : ViewModel() {
     val uiState: StateFlow<LoginState> = _uiState.asStateFlow()
 
     fun onCorreoCambiado(nuevoCorreo: String) {
-        _uiState.update { it.copy(correo = nuevoCorreo, error = null) }
+        _uiState.update {
+            it.copy(
+                correo = nuevoCorreo,
+                error = null,
+                loginExitoso = false
+            )
+        }
     }
 
     fun onContrasenaCambiada(nuevaContrasena: String) {
-        _uiState.update { it.copy(contrasena = nuevaContrasena, error = null) }
+        _uiState.update {
+            it.copy(
+                contrasena = nuevaContrasena,
+                error = null,
+                loginExitoso = false
+            )
+        }
     }
 
     fun iniciarSesion() {
-        val correoActual = _uiState.value.correo
-        val contrasenaActual = _uiState.value.contrasena
+        val currentState = _uiState.value
 
-        if (correoActual.isBlank() || contrasenaActual.isBlank()) {
-            _uiState.update { it.copy(error = "Los campos no pueden estar vacíos") }
+        if (currentState.cargando) return
+
+        val correoActual = currentState.correo.trim()
+        val contrasenaActual = currentState.contrasena
+
+        if (correoActual.isBlank()) {
+            _uiState.update {
+                it.copy(error = "Debes ingresar tu correo")
+            }
             return
         }
 
-        _uiState.update { it.copy(cargando = true, error = null) }
+        if (!correoEsValido(correoActual)) {
+            _uiState.update {
+                it.copy(error = "Ingresa un correo válido")
+            }
+            return
+        }
 
-        // Simulación de éxito
-        _uiState.update { it.copy(cargando = false, loginExitoso = true) }
+        if (contrasenaActual.isBlank()) {
+            _uiState.update {
+                it.copy(error = "Debes ingresar tu contraseña")
+            }
+            return
+        }
+
+        if (contrasenaActual.length < 6) {
+            _uiState.update {
+                it.copy(error = "La contraseña debe tener mínimo 6 caracteres")
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                cargando = true,
+                error = null
+            )
+        }
+
+        // Login simulado hasta conectar con backend/API.
+        _uiState.update {
+            it.copy(
+                cargando = false,
+                loginExitoso = true
+            )
+        }
+    }
+
+    private fun correoEsValido(correo: String): Boolean {
+        val correoRegex = Regex(
+            pattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        )
+
+        return correoRegex.matches(correo)
     }
 }

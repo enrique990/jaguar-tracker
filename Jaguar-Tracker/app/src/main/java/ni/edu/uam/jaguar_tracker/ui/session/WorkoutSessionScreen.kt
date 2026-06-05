@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ni.edu.uam.jaguar_tracker.ui.components.rememberSafeClick
 
 data class SetSession(
     val number: Int,
@@ -48,6 +49,8 @@ fun WorkoutSessionScreen(
     var isKg by remember { mutableStateOf(value = true) }
 
     val exercises = state.exercises
+    
+
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -101,11 +104,15 @@ fun WorkoutSessionScreen(
 
 @Composable
 fun WorkoutSessionHeader(
+
     onBackClick: () -> Unit,
     isKg: Boolean,
     onUnitToggle: (Boolean) -> Unit,
     routineName: String
 ) {
+    val safeBackClick = rememberSafeClick {
+        onBackClick()
+    }
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -117,7 +124,7 @@ fun WorkoutSessionHeader(
                 modifier = Modifier
                     .background(JaguarSurface, RoundedCornerShape(8.dp))
                     .border(1.dp, JaguarBorder, RoundedCornerShape(8.dp))
-                    .clickable { onBackClick() }
+                    .clickable { safeBackClick() }
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
