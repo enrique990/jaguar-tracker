@@ -324,12 +324,24 @@ class NewRoutineViewModel : ViewModel() {
                 emptyList()
             }
 
+        val orderedDays = listOf(
+            "Lunes",
+            "Martes",
+            "Miércoles",
+            "Jueves",
+            "Viernes",
+            "Sábado",
+            "Domingo"
+        ).filter { day ->
+            state.selectedWeekDays.contains(day)
+        }
+
         RoutineRepository.addRoutine(
             name = state.routineName,
             exercises = exercisesToSave,
             weeks = state.microcycles,
             trainingDays = state.selectedWeekDays.size,
-            selectedDays = state.selectedWeekDays.toList(),
+            selectedDays = orderedDays,
             weeklyPlans = weeklyPlansToSave
         )
 
