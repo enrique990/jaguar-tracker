@@ -18,9 +18,7 @@ object RoutineRepository {
         exercises: List<ExerciseModel>,
         weeks: Int = 4,
         trainingDays: Int = 3,
-        useCustomDays: Boolean = false,
         selectedDays: List<String> = emptyList(),
-        dayName: String = "",
         weeklyPlans: List<WeeklyPlanModel> = emptyList()
     ) {
         _routines.update { currentRoutines ->
@@ -39,17 +37,14 @@ object RoutineRepository {
                 name = name.trim(),
                 weeks = weeks,
                 trainingDays = trainingDays,
-                useCustomDays = useCustomDays,
                 selectedDays = selectedDays,
-                dayName = dayName,
                 weeklyPlans = weeklyPlans,
                 exercises = exercises,
                 isSelected = true,
                 hasEmoji = true
             )
         }
-    }
-    fun selectRoutine(routineId: Int) {
+    }    fun selectRoutine(routineId: Int) {
         _routines.update { currentRoutines ->
             currentRoutines.map { routine ->
                 routine.copy(
