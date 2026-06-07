@@ -84,4 +84,15 @@
     <string name="weight_display_format">%1$d kg</string>
     <string name="start_rest_button">Iniciar Descanso (%1$ds)</string>
     <string name="complete_workout_button">Completar Entrenamiento</string>
+
+    <!-- Profile Setup Screen -->
+    <string name="profile_setup_title">Configuración del Perfil</string>
+    <string name="profile_setup_subtitle">Configura tu nivel de fuerza</string>
+    <string name="body_weight_label">Peso Corporal (kg)</string>
+    <string name="gender_label">Sexo</string>
+    <string name="gender_male">Masculino</string>
+    <string name="gender_female">Femenino</string>
+    <string name="weight_expiry_warning">El peso caducará en 7 días para mantener tu nivel actualizado</string>
+    <string name="skip_for_now">Omitir por ahora</string>
+    <string name="save_button">Guardar</string>
 </resources>

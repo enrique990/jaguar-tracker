@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
+import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
 import ni.edu.uam.jaguar_tracker.ui.routine.NewRoutineScreen
 import ni.edu.uam.jaguar_tracker.ui.session.WorkoutSessionScreen
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
@@ -36,11 +37,24 @@ fun JaguarTrackerNavHost() {
     ) {
         composable("login") {
             LoginScreen {
-                navController.navigate("home") {
-                    // Limpiamos el stack para que no pueda volver al login con atrás
+                navController.navigate("profile_setup") {
                     popUpTo("login") { inclusive = true }
                 }
             }
+        }
+        composable("profile_setup") {
+            ProfileSetupScreen(
+                onSave = { _, _ ->
+                    navController.navigate("home") {
+                        popUpTo("profile_setup") { inclusive = true }
+                    }
+                },
+                onSkip = {
+                    navController.navigate("home") {
+                        popUpTo("profile_setup") { inclusive = true }
+                    }
+                }
+            )
         }
         composable("home") {
             HomeScreen(
@@ -55,7 +69,7 @@ fun JaguarTrackerNavHost() {
         }
         composable("workout_session") {
             WorkoutSessionScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
             )
         }
     }
