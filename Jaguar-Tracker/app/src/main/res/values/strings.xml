@@ -120,4 +120,16 @@
     <string name="completed_workouts_label">Entrenamientos Completados</string>
     <string name="created_routines_label">Rutinas Creadas</string>
     <string name="active_days_label">Días Activo</string>
+    <!-- History Screen -->
+    <string name="history_title">Historial</string>
+    <string name="history_subtitle">Visualiza tu evolución</string>
+    <string name="one_month">1 mes</string>
+    <string name="three_months">3 meses</string>
+    <string name="six_months">6 meses</string>
+    <string name="progress_curve_title">Curva de Progreso</string>
+    <string name="estimated_1rm_label">1RM Estimado</string>
+    <string name="progress_label">Progreso</string>
+    <string name="microcycles_label">Microciclos</string>
+    <string name="press_de_banca">Press de Banca</string>
+
 </resources>

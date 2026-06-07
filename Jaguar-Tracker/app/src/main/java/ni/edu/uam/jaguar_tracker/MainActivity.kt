@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
+import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
@@ -64,7 +65,8 @@ fun JaguarTrackerNavHost() {
             HomeScreen(
                 onNewRoutineClick = { navController.navigate("new_routine") },
                 onStartWorkoutClick = { navController.navigate("workout_session") },
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate("profile") },
+                onHistoryClick = { navController.navigate("history") }
             )
         }
         composable("profile") {
@@ -80,6 +82,12 @@ fun JaguarTrackerNavHost() {
         composable("workout_session") {
             WorkoutSessionScreen(
                 onBackClick = { navController.popBackStack() },
+            )
+        }
+        composable("history") {
+            HistoryScreen(
+                onHomeClick = { navController.navigate("home") },
+                onProfileClick = { navController.navigate("profile") }
             )
         }
     }
