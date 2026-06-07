@@ -53,6 +53,7 @@ data class Week(
 fun HomeScreen(
     onNewRoutineClick: () -> Unit = {},
     onStartWorkoutClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     homeViewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -64,7 +65,7 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = JaguarBlack,
-        bottomBar = { JaguarBottomNavigation() }
+        bottomBar = { JaguarBottomNavigation(onProfileClick = onProfileClick) }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -412,7 +413,10 @@ fun WorkoutCard(
 }
 
 @Composable
-fun JaguarBottomNavigation() {
+fun JaguarBottomNavigation(
+    onProfileClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {}
+) {
     NavigationBar(
         containerColor = JaguarBlack,
         tonalElevation = 0.dp,
@@ -425,10 +429,13 @@ fun JaguarBottomNavigation() {
             Triple(stringResource(R.string.nav_perfil), Icons.Default.Person, false)
         )
 
-        items.forEach { (label, icon, selected) ->
+        items.forEachIndexed { index, (label, icon, selected) ->
             NavigationBarItem(
                 selected = selected,
-                onClick = { /* TODO */ },
+                onClick = { 
+                    if (index == 0) onHomeClick()
+                    if (index == 3) onProfileClick()
+                },
                 icon = {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,

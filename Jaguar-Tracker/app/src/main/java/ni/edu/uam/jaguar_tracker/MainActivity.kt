@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
+import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
 import ni.edu.uam.jaguar_tracker.ui.routine.NewRoutineScreen
 import ni.edu.uam.jaguar_tracker.ui.session.WorkoutSessionScreen
@@ -36,11 +37,14 @@ fun JaguarTrackerNavHost() {
         startDestination = "login",
     ) {
         composable("login") {
-            LoginScreen {
-                navController.navigate("profile_setup") {
-                    popUpTo("login") { inclusive = true }
+            LoginScreen(
+                onProfileClick = { navController.navigate("profile") },
+                onLoginSuccess = {
+                    navController.navigate("profile_setup") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
-            }
+            )
         }
         composable("profile_setup") {
             ProfileSetupScreen(
@@ -59,7 +63,13 @@ fun JaguarTrackerNavHost() {
         composable("home") {
             HomeScreen(
                 onNewRoutineClick = { navController.navigate("new_routine") },
-                onStartWorkoutClick = { navController.navigate("workout_session") }
+                onStartWorkoutClick = { navController.navigate("workout_session") },
+                onProfileClick = { navController.navigate("profile") }
+            )
+        }
+        composable("profile") {
+            ProfileScreen(
+                onNavigateToHome = { navController.navigate("home") }
             )
         }
         composable("new_routine") {

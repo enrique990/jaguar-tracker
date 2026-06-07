@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
+    onProfileClick: () -> Unit = {},
     onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -39,7 +42,8 @@ fun LoginScreen(
         state = state,
         onCorreoCambiado = viewModel::onCorreoCambiado,
         onContrasenaCambiada = viewModel::onContrasenaCambiada,
-        onIniciarSesion = viewModel::iniciarSesion
+        onIniciarSesion = viewModel::iniciarSesion,
+        onProfileClick = onProfileClick
     )
 }
 
@@ -49,11 +53,28 @@ fun LoginContent(
     onCorreoCambiado: (String) -> Unit,
     onContrasenaCambiada: (String) -> Unit,
     onIniciarSesion: () -> Unit,
+    onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        modifier = modifier
+        modifier = modifier,
+        topBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                IconButton(onClick = onProfileClick) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = stringResource(R.string.nav_perfil),
+                        tint = JaguarTeal
+                    )
+                }
+            }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -215,7 +236,8 @@ fun LoginScreenPreview() {
             state = LoginState(),
             onCorreoCambiado = {},
             onContrasenaCambiada = {},
-            onIniciarSesion = {}
+            onIniciarSesion = {},
+            onProfileClick = {}
         )
     }
 }

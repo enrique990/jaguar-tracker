@@ -95,4 +95,29 @@
     <string name="weight_expiry_warning">El peso caducará en 7 días para mantener tu nivel actualizado</string>
     <string name="skip_for_now">Omitir por ahora</string>
     <string name="save_button">Guardar</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">Perfil</string>
+    <string name="profile_subtitle">Configuración y estadísticas</string>
+    <string name="user_profile_label">Perfil de Usuario</string>
+    <string name="user_cif_label">CIF: %1$s</string>
+    <string name="strength_calculator_title">Calculadora de Fuerza Relativa</string>
+    <string name="strength_calculator_subtitle">Calcula tu nivel de fuerza</string>
+    <string name="exercise_label">Ejercicio</string>
+    <string name="calculate_button">Calcular</string>
+    <string name="body_weight_title">Peso Corporal</string>
+    <string name="body_weight_subtitle">Actualiza cada 7 días</string>
+    <string name="expired_tag">Vencido</string>
+    <string name="current_weight_label">Peso Actual</string>
+    <string name="last_update_label">Última Actualización</string>
+    <string name="update_weight_button">Actualizar Peso</string>
+    <string name="feedback_title">Recomendaciones o Quejas</string>
+    <string name="feedback_placeholder">Comparte tus sugerencias para mejorar el gimnasio universitario&#8230;</string>
+    <string name="send_button">Enviar</string>
+    <string name="notifications_title">Notificaciones</string>
+    <string name="notifications_subtitle">Recordatorios de entrenamiento</string>
+    <string name="general_stats_title">Estadísticas Generales</string>
+    <string name="completed_workouts_label">Entrenamientos Completados</string>
+    <string name="created_routines_label">Rutinas Creadas</string>
+    <string name="active_days_label">Días Activo</string>
 </resources>
