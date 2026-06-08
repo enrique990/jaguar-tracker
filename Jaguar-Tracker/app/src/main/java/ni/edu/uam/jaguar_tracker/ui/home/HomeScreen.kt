@@ -53,6 +53,8 @@ data class Week(
 fun HomeScreen(
     onNewRoutineClick: () -> Unit = {},
     onStartWorkoutClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
     homeViewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -64,7 +66,13 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = JaguarBlack,
-        bottomBar = { JaguarBottomNavigation() }
+        bottomBar = {
+            JaguarBottomNavigation(
+                onProfileClick = onProfileClick,
+                onHomeClick = {}, // Already at Home
+                onHistoryClick = onHistoryClick
+            )
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -412,23 +420,35 @@ fun WorkoutCard(
 }
 
 @Composable
-fun JaguarBottomNavigation() {
+fun JaguarBottomNavigation(
+    selectedTabIndex: Int = 0,
+    onProfileClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {}
+) {
     NavigationBar(
         containerColor = JaguarBlack,
         tonalElevation = 0.dp,
         modifier = Modifier.height(80.dp)
     ) {
         val items = listOf(
-            Triple(stringResource(R.string.nav_inicio), Icons.Default.Home, true),
-            Triple(stringResource(R.string.nav_historial), Icons.Default.History, false),
-            Triple(stringResource(R.string.nav_ranking), Icons.Default.EmojiEvents, false),
-            Triple(stringResource(R.string.nav_perfil), Icons.Default.Person, false)
+            Triple(stringResource(R.string.nav_inicio), Icons.Default.Home, 0),
+            Triple(stringResource(R.string.nav_historial), Icons.Default.History, 1),
+            Triple(stringResource(R.string.nav_ranking), Icons.Default.EmojiEvents, 2),
+            Triple(stringResource(R.string.nav_perfil), Icons.Default.Person, 3)
         )
 
-        items.forEach { (label, icon, selected) ->
+        items.forEachIndexed { index, (label, icon, itemIndex) ->
+            val selected = selectedTabIndex == itemIndex
             NavigationBarItem(
                 selected = selected,
-                onClick = { /* TODO */ },
+                onClick = { 
+                    when (index) {
+                        0 -> onHomeClick()
+                        1 -> onHistoryClick()
+                        3 -> onProfileClick()
+                    }
+                },
                 icon = {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
