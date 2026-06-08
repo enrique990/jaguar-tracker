@@ -483,39 +483,59 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
         return emptyList()
     }
 
-    val defaultWorkouts = listOf(
-        Workout("Lunes", "Pecho y Tríceps", "Medio", Color(0xFFFFA500), 65, 8, isCurrent = true),
-        Workout("Martes", "Espalda y Bíceps", "Alto", Color(0xFFFF4500), 70, 9, isLocked = true),
-        Workout("Jueves", "Piernas", "Alto", Color(0xFFFF4500), 75, 7, isLocked = true),
-        Workout("Viernes", "Hombros y Abdomen", "Bajo", Color(0xFF32CD32), 50, 6, isLocked = true)
+    val orderedDays = listOf(
+        "Lunes",
+        "Martes",
+        "Miércoles",
+        "Jueves",
+        "Viernes",
+        "Sábado",
+        "Domingo"
     )
 
-    val workoutsFromRoutine =
-        if (routine.exercises.isEmpty()) {
-            defaultWorkouts
+    val selectedDays =
+        if (routine.selectedDays.isNotEmpty()) {
+            orderedDays.filter { day -> routine.selectedDays.contains(day) }
         } else {
-            val days = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado")
-
-            routine.exercises.mapIndexed { index, exercise ->
-                Workout(
-                    day = days[index % days.size],
-                    name = exercise.name,
-                    difficulty = "Medio",
-                    difficultyColor = Color(0xFFFFA500),
-                    duration = 45,
-                    exercises = 1,
-                    isLocked = index != 0,
-                    isCurrent = index == 0
-                )
-            }
+            orderedDays.take(routine.trainingDays)
         }
 
+    val exercisesCount = routine.exercises.size.coerceAtLeast(1)
+
     return (1..routine.weeks).map { weekNumber ->
+
+        val weeklyPlan = routine.weeklyPlans.firstOrNull {
+            it.weekNumber == weekNumber
+        }
+
+        val difficulty = weeklyPlan?.intensity ?: "Media"
+
+        val difficultyColor = when (difficulty) {
+            "Baja" -> Color(0xFF32CD32)
+            "Media" -> Color(0xFFFFA500)
+            "Alta" -> Color(0xFFFF4500)
+            "Descarga" -> Color(0xFF00D1FF)
+            else -> Color(0xFFFFA500)
+        }
+
+        val workouts = selectedDays.mapIndexed { dayIndex, day ->
+            Workout(
+                day = day,
+                name = routine.name,
+                difficulty = difficulty,
+                difficultyColor = difficultyColor,
+                duration = (exercisesCount * 12) + 15,
+                exercises = exercisesCount,
+                isLocked = false,
+                isCurrent = weekNumber == 1 && dayIndex == 0
+            )
+        }
+
         Week(
             number = weekNumber,
-            workouts = if (weekNumber == 1) workoutsFromRoutine else emptyList(),
+            workouts = workouts,
             isExpanded = weekNumber == 1,
-            hasEmoji = routine.isSelected && weekNumber == 1
+            hasEmoji = weekNumber == 1
         )
     }
 }

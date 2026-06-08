@@ -1,5 +1,4 @@
 package ni.edu.uam.jaguar_tracker.data.model
-
 data class ExerciseModel(
     val id: Int,
     val name: String,
@@ -20,9 +19,7 @@ data class RoutineModel(
     val name: String,
     val weeks: Int = 4,
     val trainingDays: Int = 3,
-    val useCustomDays: Boolean = false,
     val selectedDays: List<String> = emptyList(),
-    val dayName: String = "",
     val weeklyPlans: List<WeeklyPlanModel> = emptyList(),
     val exercises: List<ExerciseModel> = emptyList(),
     val isSelected: Boolean = false,

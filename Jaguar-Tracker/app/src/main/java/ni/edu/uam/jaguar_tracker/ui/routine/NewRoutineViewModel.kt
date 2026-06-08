@@ -27,13 +27,10 @@ data class WeeklyPlanUi(
 
 data class NewRoutineUiState(
     val routineName: String = "",
-    val trainingDaysText: String = "3",
-    val isCustomDay: Boolean = false,
     val selectedWeekDays: Set<String> = emptySet(),
     val selectedExercises: List<Exercise> = emptyList(),
     val availableExercises: List<Exercise> = emptyList(),
     val isSheetOpen: Boolean = false,
-    val advancedOptionsEnabled: Boolean = true,
     val planMesocycleEnabled: Boolean = true,
     val microcycles: Int = 4,
     val weeklyPlans: List<WeeklyPlanUi> = List(4) { WeeklyPlanUi(it + 1) },
@@ -76,39 +73,8 @@ class NewRoutineViewModel : ViewModel() {
         }
     }
 
-    fun updateTrainingDays(value: String) {
-        val digits = value.filter { it.isDigit() }
-
-        val normalized = when {
-            digits.isBlank() -> ""
-            digits.length > 1 -> digits.last().toString()
-            else -> digits
-        }
-
-        val number = normalized.toIntOrNull()
-
-        if (normalized.isBlank() || number in 1..7) {
-            _uiState.update {
-                it.copy(
-                    trainingDaysText = normalized,
-                    error = null
-                )
-            }
-        }
-    }
-
-    fun updateDayMode(isCustom: Boolean) {
-        _uiState.update {
-            it.copy(
-                isCustomDay = isCustom,
-                error = null
-            )
-        }
-    }
-
     fun toggleWeekDay(day: String) {
         _uiState.update { state ->
-
             val updatedDays =
                 if (state.selectedWeekDays.contains(day)) {
                     state.selectedWeekDays - day
@@ -118,25 +84,18 @@ class NewRoutineViewModel : ViewModel() {
 
             state.copy(
                 selectedWeekDays = updatedDays,
-                trainingDaysText = if (state.isCustomDay && updatedDays.isNotEmpty()) {
-                    updatedDays.size.toString()
-                } else {
-                    state.trainingDaysText
-                },
-                error = null
+                error = null,
+                wasSaved = false
             )
-        }
-    }
-
-    fun updateAdvancedOptions(enabled: Boolean) {
-        _uiState.update {
-            it.copy(advancedOptionsEnabled = enabled)
         }
     }
 
     fun updatePlanMesocycle(enabled: Boolean) {
         _uiState.update {
-            it.copy(planMesocycleEnabled = enabled)
+            it.copy(
+                planMesocycleEnabled = enabled,
+                error = null
+            )
         }
     }
 
@@ -175,7 +134,11 @@ class NewRoutineViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(
                 weeklyPlans = state.weeklyPlans.map {
-                    if (it.weekNumber == weekNumber) it.copy(intensity = intensity) else it
+                    if (it.weekNumber == weekNumber) {
+                        it.copy(intensity = intensity)
+                    } else {
+                        it
+                    }
                 }
             )
         }
@@ -185,7 +148,11 @@ class NewRoutineViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(
                 weeklyPlans = state.weeklyPlans.map {
-                    if (it.weekNumber == weekNumber) it.copy(volume = volume) else it
+                    if (it.weekNumber == weekNumber) {
+                        it.copy(volume = volume)
+                    } else {
+                        it
+                    }
                 }
             )
         }
@@ -236,7 +203,6 @@ class NewRoutineViewModel : ViewModel() {
 
     fun removeExercise(exerciseId: Int) {
         _uiState.update { state ->
-
             val updatedAvailable = state.availableExercises.map { exercise ->
                 if (exercise.id == exerciseId) {
                     exercise.copy(isSelected = false)
@@ -255,26 +221,29 @@ class NewRoutineViewModel : ViewModel() {
 
     fun updateExerciseSets(exerciseId: Int, value: String) {
         updateSelectedExercise(exerciseId) {
-            it.copy(sets = value.filter { char -> char.isDigit() }.take(2))
+            it.copy(sets = onlyDigits(value).take(2))
         }
     }
 
     fun updateExerciseReps(exerciseId: Int, value: String) {
         updateSelectedExercise(exerciseId) {
-            it.copy(reps = value.take(10))
+            it.copy(reps = onlyDigits(value).take(4))
         }
     }
-
     fun updateExerciseRir(exerciseId: Int, value: String) {
         updateSelectedExercise(exerciseId) {
-            it.copy(rir = value.take(5))
+            it.copy(rir = onlyDigits(value).take(2))
         }
     }
 
     fun updateExerciseRest(exerciseId: Int, value: String) {
         updateSelectedExercise(exerciseId) {
-            it.copy(restSeconds = value.filter { char -> char.isDigit() }.take(4))
+            it.copy(restSeconds = onlyDigits(value).take(5))
         }
+    }
+
+    private fun onlyDigits(value: String): String {
+        return value.filter { it.isDigit() }
     }
 
     private fun updateSelectedExercise(
@@ -284,10 +253,20 @@ class NewRoutineViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(
                 selectedExercises = state.selectedExercises.map { exercise ->
-                    if (exercise.id == exerciseId) transform(exercise) else exercise
+                    if (exercise.id == exerciseId) {
+                        transform(exercise)
+                    } else {
+                        exercise
+                    }
                 },
                 error = null
             )
+        }
+    }
+
+    fun dismissError() {
+        _uiState.update {
+            it.copy(error = null)
         }
     }
 
@@ -295,37 +274,29 @@ class NewRoutineViewModel : ViewModel() {
         val state = _uiState.value
 
         if (state.routineName.isBlank()) {
-            _uiState.update {
-                it.copy(error = "Debes escribir el nombre de la rutina")
-            }
+            showError("Debes escribir el nombre de la rutina")
             return
         }
 
-        val trainingDays =
-            if (state.isCustomDay) {
-                state.selectedWeekDays.size
-            } else {
-                state.trainingDaysText.toIntOrNull() ?: 0
-            }
-
-        if (trainingDays !in 1..7) {
-            _uiState.update {
-                it.copy(error = "La rutina debe tener entre 1 y 7 días de entrenamiento")
-            }
-            return
-        }
-
-        if (state.isCustomDay && state.selectedWeekDays.isEmpty()) {
-            _uiState.update {
-                it.copy(error = "Seleccioná al menos un día personalizado")
-            }
+        if (state.selectedWeekDays.isEmpty()) {
+            showError("Seleccioná al menos un día de entrenamiento")
             return
         }
 
         if (state.selectedExercises.isEmpty()) {
-            _uiState.update {
-                it.copy(error = "Debes agregar al menos un ejercicio")
-            }
+            showError("Debes agregar al menos un ejercicio")
+            return
+        }
+
+        val invalidExercise = state.selectedExercises.firstOrNull { exercise ->
+            !isPositiveNumber(exercise.sets) ||
+                    !isPositiveNumber(exercise.reps) ||
+                    !isValidRir(exercise.rir) ||
+                    !isPositiveNumber(exercise.restSeconds)
+        }
+
+        if (invalidExercise != null) {
+            showError("Revisá los datos de ${invalidExercise.name}. Series, repeticiones y descanso deben ser mayores que 0. RIR/RPE debe estar entre 0 y 10.")
             return
         }
 
@@ -336,7 +307,7 @@ class NewRoutineViewModel : ViewModel() {
                 sets = exercise.sets.toIntOrNull() ?: 3,
                 reps = exercise.reps.ifBlank { "12" },
                 rir = exercise.rir.ifBlank { "2" },
-                restSeconds = exercise.restSeconds.toIntOrNull() ?: 90
+                restSeconds = exercise.restSeconds.toIntOrNull() ?: 99999
             )
         }
 
@@ -353,13 +324,24 @@ class NewRoutineViewModel : ViewModel() {
                 emptyList()
             }
 
+        val orderedDays = listOf(
+            "Lunes",
+            "Martes",
+            "Miércoles",
+            "Jueves",
+            "Viernes",
+            "Sábado",
+            "Domingo"
+        ).filter { day ->
+            state.selectedWeekDays.contains(day)
+        }
+
         RoutineRepository.addRoutine(
             name = state.routineName,
             exercises = exercisesToSave,
             weeks = state.microcycles,
-            trainingDays = trainingDays,
-            useCustomDays = state.isCustomDay,
-            selectedDays = state.selectedWeekDays.toList(),
+            trainingDays = state.selectedWeekDays.size,
+            selectedDays = orderedDays,
             weeklyPlans = weeklyPlansToSave
         )
 
@@ -369,5 +351,21 @@ class NewRoutineViewModel : ViewModel() {
                 wasSaved = true
             )
         }
+    }
+
+    private fun showError(message: String) {
+        _uiState.update {
+            it.copy(error = message)
+        }
+    }
+
+    private fun isPositiveNumber(value: String): Boolean {
+        val number = value.toLongOrNull()
+        return number != null && number > 0
+    }
+
+    private fun isValidRir(value: String): Boolean {
+        val number = value.toLongOrNull()
+        return number != null && number in 0..10
     }
 }
