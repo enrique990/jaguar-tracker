@@ -132,4 +132,15 @@
     <string name="microcycles_label">Microciclos</string>
     <string name="press_de_banca">Press de Banca</string>
 
+    <!-- Ranking Screen -->
+    <string name="ranking_title">Ranking Universitario</string>
+    <string name="ranking_subtitle">Competitividad y comunidad</string>
+    <string name="subir_record_personal">Subir Récord Personal</string>
+    <string name="clasificacion_fuerza_relativa">Clasificación por Fuerza Relativa</string>
+    <string name="peso_levantado_peso_corporal">Peso levantado / Peso corporal</string>
+    <string name="puntuacion_label">Puntuación: %1$.2f</string>
+    <string name="tu_posicion">Tu Posición</string>
+    <string name="fuerza_relativa">Fuerza Relativa</string>
+    <string name="posiciones_top_10">Posiciones para Top 10</string>
+
 </resources>

@@ -30,7 +30,8 @@ import ni.edu.uam.jaguar_tracker.ui.theme.*
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     onHomeClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onRankingClick: () -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -39,7 +40,8 @@ fun HistoryScreen(
             JaguarBottomNavigation(
                 selectedTabIndex = 1,
                 onHomeClick = onHomeClick,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                onRankingClick = onRankingClick
             )
         }
     ) { paddingValues ->

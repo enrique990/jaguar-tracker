@@ -7,11 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
+import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
+import ni.edu.uam.jaguar_tracker.ui.ranking.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.routine.NewRoutineScreen
 import ni.edu.uam.jaguar_tracker.ui.session.WorkoutSessionScreen
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
@@ -66,12 +67,22 @@ fun JaguarTrackerNavHost() {
                 onNewRoutineClick = { navController.navigate("new_routine") },
                 onStartWorkoutClick = { navController.navigate("workout_session") },
                 onProfileClick = { navController.navigate("profile") },
-                onHistoryClick = { navController.navigate("history") }
+                onHistoryClick = { navController.navigate("history") },
+                onRankingClick = { navController.navigate("ranking") }
+            )
+        }
+        composable("ranking") {
+            RankingScreen(
+                onHomeClick = { navController.navigate("home") },
+                onHistoryClick = { navController.navigate("history") },
+                onProfileClick = { navController.navigate("profile") }
             )
         }
         composable("profile") {
             ProfileScreen(
-                onNavigateToHome = { navController.navigate("home") }
+                onHomeClick = { navController.navigate("home") },
+                onHistoryClick = { navController.navigate("history") },
+                onRankingClick = { navController.navigate("ranking") }
             )
         }
         composable("new_routine") {
@@ -87,7 +98,8 @@ fun JaguarTrackerNavHost() {
         composable("history") {
             HistoryScreen(
                 onHomeClick = { navController.navigate("home") },
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate("profile") },
+                onRankingClick = { navController.navigate("ranking") }
             )
         }
     }
