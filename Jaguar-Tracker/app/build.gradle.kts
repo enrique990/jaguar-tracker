@@ -61,6 +61,16 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    // Retrofit para conectar con backend
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+// OkHttp para ver logs de las peticiones
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+// Corrutinas y viewModelScope
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     // Activity
     implementation("androidx.activity:activity-compose:1.13.0")

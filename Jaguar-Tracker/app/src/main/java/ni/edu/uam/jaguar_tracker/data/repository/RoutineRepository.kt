@@ -6,12 +6,35 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import ni.edu.uam.jaguar_tracker.data.model.ExerciseModel
 import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
+import ni.edu.uam.jaguar_tracker.data.model.RutinaRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.RutinaResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.UsuarioRefDto
 import ni.edu.uam.jaguar_tracker.data.model.WeeklyPlanModel
+import ni.edu.uam.jaguar_tracker.data.remote.RetrofitClient
+
 object RoutineRepository {
 
     private val _routines = MutableStateFlow<List<RoutineModel>>(emptyList())
 
     val routines: StateFlow<List<RoutineModel>> = _routines.asStateFlow()
+
+    suspend fun crearRutinaBackend(
+        idUsuario: Int,
+        nombre: String,
+        usaMicrociclos: Boolean,
+        cantidadMicrociclos: Int,
+        fechaCreacion: String
+    ): RutinaResponseDto {
+        val request = RutinaRequestDto(
+            usuario = UsuarioRefDto(idUsuario = idUsuario),
+            nombre = nombre,
+            usaMicrociclos = usaMicrociclos,
+            cantidadMicrociclos = cantidadMicrociclos,
+            fechaCreacion = fechaCreacion
+        )
+
+        return RetrofitClient.apiService.crearRutina(request)
+    }
 
     fun addRoutine(
         name: String,
@@ -44,7 +67,9 @@ object RoutineRepository {
                 hasEmoji = true
             )
         }
-    }    fun selectRoutine(routineId: Int) {
+    }
+
+    fun selectRoutine(routineId: Int) {
         _routines.update { currentRoutines ->
             currentRoutines.map { routine ->
                 routine.copy(

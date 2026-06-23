@@ -1,5 +1,7 @@
 package ni.edu.uam.jaguar_tracker.ui.routine
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -8,6 +10,12 @@ import kotlinx.coroutines.flow.update
 import ni.edu.uam.jaguar_tracker.data.model.ExerciseModel
 import ni.edu.uam.jaguar_tracker.data.model.WeeklyPlanModel
 import ni.edu.uam.jaguar_tracker.data.repository.RoutineRepository
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import ni.edu.uam.jaguar_tracker.data.repository.EjercicioRepository
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 
 data class Exercise(
     val id: Int,
@@ -43,23 +51,45 @@ class NewRoutineViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(NewRoutineUiState())
     val uiState: StateFlow<NewRoutineUiState> = _uiState.asStateFlow()
 
+    private val ejercicioRepository = EjercicioRepository()
+
     init {
-        loadAvailableExercises()
+        cargarEjerciciosDesdeBackend()
     }
 
-    private fun loadAvailableExercises() {
-        val mockExercises = listOf(
-            Exercise(1, "Press de banca", sets = "4", reps = "10"),
-            Exercise(2, "Sentadillas", sets = "4", reps = "8"),
-            Exercise(3, "Peso muerto", sets = "3", reps = "6"),
-            Exercise(4, "Dominadas", sets = "3", reps = "10"),
-            Exercise(5, "Curl de bíceps", sets = "3", reps = "12"),
-            Exercise(6, "Press militar", sets = "4", reps = "8"),
-            Exercise(7, "Remo con barra", sets = "4", reps = "10")
-        )
+    fun cargarEjerciciosDesdeBackend() {
+        viewModelScope.launch {
+            try {
+                val ejerciciosBackend = ejercicioRepository.obtenerEjercicios()
 
-        _uiState.update {
-            it.copy(availableExercises = mockExercises)
+                val ejerciciosUi = ejerciciosBackend.mapNotNull { ejercicio ->
+                    val id = ejercicio.idEjercicio ?: return@mapNotNull null
+
+                    Exercise(
+                        id = id,
+                        name = ejercicio.nombre,
+                        sets = ejercicio.serieRecomendadas.toString(),
+                        reps = ejercicio.repeticionesRecomendadas.toString(),
+                        rir = "2",
+                        restSeconds = "90",
+                        isSelected = _uiState.value.selectedExercises.any { it.id == id }
+                    )
+                }
+
+                _uiState.update { state ->
+                    state.copy(
+                        availableExercises = ejerciciosUi,
+                        error = null
+                    )
+                }
+
+            } catch (e: Exception) {
+                _uiState.update { state ->
+                    state.copy(
+                        error = "No se pudieron cargar los ejercicios del backend: ${e.message}"
+                    )
+                }
+            }
         }
     }
 
@@ -270,6 +300,7 @@ class NewRoutineViewModel : ViewModel() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun saveRoutine() {
         val state = _uiState.value
 
@@ -300,56 +331,77 @@ class NewRoutineViewModel : ViewModel() {
             return
         }
 
-        val exercisesToSave = state.selectedExercises.map { exercise ->
-            ExerciseModel(
-                id = exercise.id,
-                name = exercise.name,
-                sets = exercise.sets.toIntOrNull() ?: 3,
-                reps = exercise.reps.ifBlank { "12" },
-                rir = exercise.rir.ifBlank { "2" },
-                restSeconds = exercise.restSeconds.toIntOrNull() ?: 99999
-            )
-        }
-
-        val weeklyPlansToSave =
-            if (state.planMesocycleEnabled) {
-                state.weeklyPlans.map {
-                    WeeklyPlanModel(
-                        weekNumber = it.weekNumber,
-                        intensity = it.intensity,
-                        volume = it.volume
+        viewModelScope.launch {
+            try {
+                val exercisesToSave = state.selectedExercises.map { exercise ->
+                    ExerciseModel(
+                        id = exercise.id,
+                        name = exercise.name,
+                        sets = exercise.sets.toIntOrNull() ?: 3,
+                        reps = exercise.reps.ifBlank { "12" },
+                        rir = exercise.rir.ifBlank { "2" },
+                        restSeconds = exercise.restSeconds.toIntOrNull() ?: 99999
                     )
                 }
-            } else {
-                emptyList()
+
+                val weeklyPlansToSave =
+                    if (state.planMesocycleEnabled) {
+                        state.weeklyPlans.map {
+                            WeeklyPlanModel(
+                                weekNumber = it.weekNumber,
+                                intensity = it.intensity,
+                                volume = it.volume
+                            )
+                        }
+                    } else {
+                        emptyList()
+                    }
+
+                val orderedDays = listOf(
+                    "Lunes",
+                    "Martes",
+                    "Miércoles",
+                    "Jueves",
+                    "Viernes",
+                    "Sábado",
+                    "Domingo"
+                ).filter { day ->
+                    state.selectedWeekDays.contains(day)
+                }
+
+                val fechaCreacion = LocalDateTime.now()
+                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+                // Por ahora usamos idUsuario = 2 porque en tu prueba de Postman aparece ese usuario.
+                // Después lo cambiamos para usar el usuario real del login.
+                RoutineRepository.crearRutinaBackend(
+                    idUsuario = 1,
+                    nombre = state.routineName.trim(),
+                    usaMicrociclos = state.planMesocycleEnabled,
+                    cantidadMicrociclos = state.microcycles,
+                    fechaCreacion = fechaCreacion
+                )
+
+                // Si el backend respondió bien, también la agregamos localmente para verla en Home.
+                RoutineRepository.addRoutine(
+                    name = state.routineName,
+                    exercises = exercisesToSave,
+                    weeks = state.microcycles,
+                    trainingDays = state.selectedWeekDays.size,
+                    selectedDays = orderedDays,
+                    weeklyPlans = weeklyPlansToSave
+                )
+
+                _uiState.update {
+                    it.copy(
+                        error = null,
+                        wasSaved = true
+                    )
+                }
+
+            } catch (e: Exception) {
+                showError("No se pudo guardar la rutina en el backend: ${e.message}")
             }
-
-        val orderedDays = listOf(
-            "Lunes",
-            "Martes",
-            "Miércoles",
-            "Jueves",
-            "Viernes",
-            "Sábado",
-            "Domingo"
-        ).filter { day ->
-            state.selectedWeekDays.contains(day)
-        }
-
-        RoutineRepository.addRoutine(
-            name = state.routineName,
-            exercises = exercisesToSave,
-            weeks = state.microcycles,
-            trainingDays = state.selectedWeekDays.size,
-            selectedDays = orderedDays,
-            weeklyPlans = weeklyPlansToSave
-        )
-
-        _uiState.update {
-            it.copy(
-                error = null,
-                wasSaved = true
-            )
         }
     }
 
