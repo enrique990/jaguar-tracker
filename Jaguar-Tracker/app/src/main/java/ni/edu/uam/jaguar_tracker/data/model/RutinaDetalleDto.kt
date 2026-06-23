@@ -15,8 +15,7 @@ data class RutinaDiaRequestDto(
 
 data class RutinaDiaResponseDto(
     val idRutinaDia: Int? = null,
-    val diaSemana: String? = null,
-    val rutina: RutinaResponseDto? = null
+    val diaSemana: String? = null
 )
 
 data class RutinaEjercicioRequestDto(

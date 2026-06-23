@@ -10,6 +10,10 @@ import ni.edu.uam.jaguar_tracker.data.model.RutinaDiaRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaDiaResponseDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloEjercicioRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloEjercicioResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloResponseDto
 
 interface ApiService {
 
@@ -30,4 +34,14 @@ interface ApiService {
     suspend fun crearRutinaEjercicio(
         @Body rutinaEjercicio: RutinaEjercicioRequestDto
     ): RutinaEjercicioResponseDto
+
+    @POST("api/microciclos")
+    suspend fun crearMicrociclo(
+        @Body microciclo: MicrocicloRequestDto
+    ): MicrocicloResponseDto
+
+    @POST("api/microciclo-ejercicios")
+    suspend fun crearMicrocicloEjercicio(
+        @Body microcicloEjercicio: MicrocicloEjercicioRequestDto
+    ): MicrocicloEjercicioResponseDto
 }

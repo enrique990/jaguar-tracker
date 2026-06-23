@@ -15,6 +15,13 @@ import ni.edu.uam.jaguar_tracker.data.model.EjercicioRefDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaDiaRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaRefDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloEjercicioRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloEjercicioResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloRefDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioRefDto
+import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioResponseDto
 
 object RoutineRepository {
 
@@ -99,13 +106,49 @@ object RoutineRepository {
         idRutina: Int,
         idEjercicio: Int,
         orden: Int
-    ) {
+    ): RutinaEjercicioResponseDto {
         val request = RutinaEjercicioRequestDto(
             rutina = RutinaRefDto(idRutina = idRutina),
             ejercicio = EjercicioRefDto(idEjercicio = idEjercicio),
             orden = orden
         )
 
-        RetrofitClient.apiService.crearRutinaEjercicio(request)
+        return RetrofitClient.apiService.crearRutinaEjercicio(request)
+    }
+
+    suspend fun crearMicrocicloBackend(
+        idRutina: Int,
+        numeroMicrociclo: Int,
+        intensidad: String,
+        volumen: String
+    ): MicrocicloResponseDto {
+        val request = MicrocicloRequestDto(
+            rutina = RutinaRefDto(idRutina = idRutina),
+            numeroMicrociclo = numeroMicrociclo,
+            intensidad = intensidad,
+            volumen = volumen
+        )
+
+        return RetrofitClient.apiService.crearMicrociclo(request)
+    }
+
+    suspend fun crearMicrocicloEjercicioBackend(
+        idMicrociclo: Int,
+        idRutinaEjercicio: Int,
+        series: Int,
+        repeticiones: Int,
+        rir: Int,
+        descansoSegundos: Int
+    ): MicrocicloEjercicioResponseDto {
+        val request = MicrocicloEjercicioRequestDto(
+            microciclo = MicrocicloRefDto(idMicrociclo = idMicrociclo),
+            rutinaEjercicio = RutinaEjercicioRefDto(idRutinaEjercicio = idRutinaEjercicio),
+            series = series,
+            repeticiones = repeticiones,
+            rir = rir,
+            descansoSegundos = descansoSegundos
+        )
+
+        return RetrofitClient.apiService.crearMicrocicloEjercicio(request)
     }
 }

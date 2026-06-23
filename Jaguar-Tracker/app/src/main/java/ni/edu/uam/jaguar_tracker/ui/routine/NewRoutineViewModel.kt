@@ -1,21 +1,20 @@
 package ni.edu.uam.jaguar_tracker.ui.routine
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import ni.edu.uam.jaguar_tracker.data.model.ExerciseModel
 import ni.edu.uam.jaguar_tracker.data.model.WeeklyPlanModel
-import ni.edu.uam.jaguar_tracker.data.repository.RoutineRepository
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
 import ni.edu.uam.jaguar_tracker.data.repository.EjercicioRepository
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
+import ni.edu.uam.jaguar_tracker.data.repository.RoutineRepository
+import retrofit2.HttpException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class Exercise(
     val id: Int,
@@ -86,7 +85,7 @@ class NewRoutineViewModel : ViewModel() {
             } catch (e: Exception) {
                 _uiState.update { state ->
                     state.copy(
-                        error = "No se pudieron cargar los ejercicios del backend: ${e.message}"
+                        error = "No se pudieron cargar los ejercicios del backend: ${e.message ?: "Error desconocido"}"
                     )
                 }
             }
@@ -260,6 +259,7 @@ class NewRoutineViewModel : ViewModel() {
             it.copy(reps = onlyDigits(value).take(4))
         }
     }
+
     fun updateExerciseRir(exerciseId: Int, value: String) {
         updateSelectedExercise(exerciseId) {
             it.copy(rir = onlyDigits(value).take(2))
@@ -300,7 +300,6 @@ class NewRoutineViewModel : ViewModel() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun saveRoutine() {
         val state = _uiState.value
 
@@ -327,7 +326,11 @@ class NewRoutineViewModel : ViewModel() {
         }
 
         if (invalidExercise != null) {
-            showError("Revisá los datos de ${invalidExercise.name}. Series, repeticiones y descanso deben ser mayores que 0. RIR/RPE debe estar entre 0 y 10.")
+            showError(
+                "Revisá los datos de ${invalidExercise.name}. " +
+                        "Series, repeticiones y descanso deben ser mayores que 0. " +
+                        "RIR/RPE debe estar entre 0 y 10."
+            )
             return
         }
 
@@ -340,7 +343,7 @@ class NewRoutineViewModel : ViewModel() {
                         sets = exercise.sets.toIntOrNull() ?: 3,
                         reps = exercise.reps.ifBlank { "12" },
                         rir = exercise.rir.ifBlank { "2" },
-                        restSeconds = exercise.restSeconds.toIntOrNull() ?: 99999
+                        restSeconds = exercise.restSeconds.toIntOrNull() ?: 90
                     )
                 }
 
@@ -369,11 +372,8 @@ class NewRoutineViewModel : ViewModel() {
                     state.selectedWeekDays.contains(day)
                 }
 
-                val fechaCreacion = LocalDateTime.now()
-                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                val fechaCreacion = obtenerFechaActualParaBackend()
 
-                // Por ahora usamos idUsuario = 2 porque en tu prueba de Postman aparece ese usuario.
-                // Después lo cambiamos para usar el usuario real del login.
                 val rutinaCreada = RoutineRepository.crearRutinaBackend(
                     idUsuario = 1,
                     nombre = state.routineName.trim(),
@@ -383,7 +383,7 @@ class NewRoutineViewModel : ViewModel() {
                 )
 
                 val idRutinaBackend = rutinaCreada.idRutina
-                    ?: throw Exception("El backend no devolvió el idRutina")
+                    ?: throw Exception("El backend no devolvió idRutina")
 
                 orderedDays.forEach { dia ->
                     RoutineRepository.crearRutinaDiaBackend(
@@ -392,15 +392,49 @@ class NewRoutineViewModel : ViewModel() {
                     )
                 }
 
-                state.selectedExercises.forEachIndexed { index, exercise ->
-                    RoutineRepository.crearRutinaEjercicioBackend(
-                        idRutina = idRutinaBackend,
-                        idEjercicio = exercise.id,
-                        orden = index + 1
-                    )
+                val rutinaEjercicioIds: Map<Int, Int> =
+                    state.selectedExercises.mapIndexed { index, exercise ->
+                        val rutinaEjercicioCreada = RoutineRepository.crearRutinaEjercicioBackend(
+                            idRutina = idRutinaBackend,
+                            idEjercicio = exercise.id,
+                            orden = index + 1
+                        )
+
+                        val idRutinaEjercicio = rutinaEjercicioCreada.idRutinaEjercicio
+                            ?: throw Exception("El backend no devolvió idRutinaEjercicio para ${exercise.name}")
+
+                        exercise.id to idRutinaEjercicio
+                    }.toMap()
+
+                if (state.planMesocycleEnabled) {
+                    state.weeklyPlans.forEach { weekPlan ->
+
+                        val microcicloCreado = RoutineRepository.crearMicrocicloBackend(
+                            idRutina = idRutinaBackend,
+                            numeroMicrociclo = weekPlan.weekNumber,
+                            intensidad = weekPlan.intensity,
+                            volumen = normalizarVolumenParaBackend(weekPlan.volume)
+                        )
+
+                        val idMicrociclo = microcicloCreado.idMicrociclo
+                            ?: throw Exception("El backend no devolvió idMicrociclo para la semana ${weekPlan.weekNumber}")
+
+                        state.selectedExercises.forEach { exercise ->
+                            val idRutinaEjercicio = rutinaEjercicioIds[exercise.id]
+                                ?: throw Exception("No se encontró idRutinaEjercicio para ${exercise.name}")
+
+                            RoutineRepository.crearMicrocicloEjercicioBackend(
+                                idMicrociclo = idMicrociclo,
+                                idRutinaEjercicio = idRutinaEjercicio,
+                                series = exercise.sets.toIntOrNull() ?: 3,
+                                repeticiones = exercise.reps.toIntOrNull() ?: 12,
+                                rir = exercise.rir.toIntOrNull() ?: 2,
+                                descansoSegundos = exercise.restSeconds.toIntOrNull() ?: 90
+                            )
+                        }
+                    }
                 }
 
-                // Si el backend respondió bien, también la agregamos localmente para verla en Home.
                 RoutineRepository.addRoutine(
                     name = state.routineName,
                     exercises = exercisesToSave,
@@ -417,10 +451,19 @@ class NewRoutineViewModel : ViewModel() {
                     )
                 }
 
+            } catch (e: HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+                showError("Error backend ${e.code()}: ${errorBody ?: e.message ?: "Sin detalle"}")
+
             } catch (e: Exception) {
-                showError("No se pudo guardar la rutina en el backend: ${e.message}")
+                showError("No se pudo guardar la rutina en el backend: ${e.message ?: "Error desconocido"}")
             }
         }
+    }
+
+    private fun obtenerFechaActualParaBackend(): String {
+        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        return formatter.format(Date())
     }
 
     private fun showError(message: String) {
@@ -437,5 +480,12 @@ class NewRoutineViewModel : ViewModel() {
     private fun isValidRir(value: String): Boolean {
         val number = value.toLongOrNull()
         return number != null && number in 0..10
+    }
+
+    private fun normalizarVolumenParaBackend(volume: String): String {
+        return when (volume) {
+            "Normal" -> "Moderado"
+            else -> volume
+        }
     }
 }
