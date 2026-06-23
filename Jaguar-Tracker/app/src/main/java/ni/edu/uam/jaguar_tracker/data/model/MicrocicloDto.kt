@@ -9,6 +9,7 @@ data class MicrocicloRequestDto(
 
 data class MicrocicloResponseDto(
     val idMicrociclo: Int? = null,
+    val rutina: RutinaResponseDto? = null,
     val numeroMicrociclo: Int? = null,
     val intensidad: String? = null,
     val volumen: String? = null
@@ -33,6 +34,8 @@ data class MicrocicloEjercicioRequestDto(
 
 data class MicrocicloEjercicioResponseDto(
     val idMicrocicloEjercicio: Int? = null,
+    val microciclo: MicrocicloResponseDto? = null,
+    val rutinaEjercicio: RutinaEjercicioResponseDto? = null,
     val series: Int? = null,
     val repeticiones: Int? = null,
     val rir: Int? = null,

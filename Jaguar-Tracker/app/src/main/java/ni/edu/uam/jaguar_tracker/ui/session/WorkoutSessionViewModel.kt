@@ -1,11 +1,14 @@
 package ni.edu.uam.jaguar_tracker.ui.session
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import ni.edu.uam.jaguar_tracker.data.model.ExerciseModel
+import ni.edu.uam.jaguar_tracker.data.remote.RetrofitClient
 import ni.edu.uam.jaguar_tracker.data.repository.RoutineRepository
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -40,7 +43,7 @@ class WorkoutSessionViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(
         WorkoutSessionUiState(
             dateLabel = currentDateLabel(),
-            exercises = defaultExerciseSessions()
+            exercises = emptyList()
         )
     )
 
@@ -51,25 +54,156 @@ class WorkoutSessionViewModel : ViewModel() {
     }
 
     private fun loadSelectedRoutine() {
-        val selectedRoutine = RoutineRepository.routines.value.firstOrNull { it.isSelected }
+        viewModelScope.launch {
+            val selectedRoutine = RoutineRepository.routines.value.firstOrNull { it.isSelected }
+                ?: RoutineRepository.routines.value.firstOrNull()
 
-        if (selectedRoutine == null || selectedRoutine.exercises.isEmpty()) {
+            if (selectedRoutine == null) {
+                _uiState.update {
+                    it.copy(
+                        routineName = "Entrenamiento",
+                        exercises = defaultExerciseSessions()
+                    )
+                }
+                return@launch
+            }
+
             _uiState.update {
                 it.copy(
-                    routineName = "Entrenamiento",
-                    exercises = defaultExerciseSessions()
+                    routineName = selectedRoutine.name,
+                    exercises = selectedRoutine.exercises.map { exercise ->
+                        exercise.toExerciseSession()
+                    }
                 )
             }
-            return
-        }
 
-        _uiState.update {
-            it.copy(
-                routineName = selectedRoutine.name,
-                exercises = selectedRoutine.exercises.map { exercise ->
-                    exercise.toExerciseSession()
+            try {
+                val rutinaEjerciciosBackend = RetrofitClient.apiService.obtenerRutinaEjercicios()
+                    .filter { rutinaEjercicio ->
+                        rutinaEjercicio.rutina?.idRutina == selectedRoutine.id
+                    }
+                    .sortedBy { rutinaEjercicio ->
+                        rutinaEjercicio.orden ?: 999
+                    }
+
+                val microciclosBackend = RetrofitClient.apiService.obtenerMicrociclos()
+                    .filter { microciclo ->
+                        microciclo.rutina?.idRutina == selectedRoutine.id
+                    }
+                    .sortedBy { microciclo ->
+                        microciclo.numeroMicrociclo ?: 999
+                    }
+
+                val microcicloBase = microciclosBackend.firstOrNull { microciclo ->
+                    microciclo.numeroMicrociclo == 1
+                } ?: microciclosBackend.firstOrNull()
+
+                val microcicloEjerciciosBackend = RetrofitClient.apiService.obtenerMicrocicloEjercicios()
+
+                val parametrosPorRutinaEjercicio = microcicloEjerciciosBackend
+                    .filter { microcicloEjercicio ->
+                        val idMicrocicloBase = microcicloBase?.idMicrociclo
+
+                        if (idMicrocicloBase != null) {
+                            microcicloEjercicio.microciclo?.idMicrociclo == idMicrocicloBase
+                        } else {
+                            microcicloEjercicio.microciclo?.rutina?.idRutina == selectedRoutine.id
+                        }
+                    }
+                    .associateBy { microcicloEjercicio ->
+                        microcicloEjercicio.rutinaEjercicio?.idRutinaEjercicio
+                    }
+
+                val exercisesFromBackend = rutinaEjerciciosBackend.mapNotNull { rutinaEjercicio ->
+                    val ejercicio = rutinaEjercicio.ejercicio ?: return@mapNotNull null
+                    val idEjercicio = ejercicio.idEjercicio ?: return@mapNotNull null
+
+                    val parametros = parametrosPorRutinaEjercicio[
+                        rutinaEjercicio.idRutinaEjercicio
+                    ]
+
+                    val localExercise = selectedRoutine.exercises.firstOrNull {
+                        it.id == idEjercicio
+                    }
+
+                    val series = parametros?.series
+                        ?: localExercise?.sets
+                        ?: ejercicio.serieRecomendadas
+
+                    val reps = parametros?.repeticiones?.toString()
+                        ?: localExercise?.reps
+                        ?: ejercicio.repeticionesRecomendadas.toString()
+
+                    val rir = parametros?.rir?.toString()
+                        ?: localExercise?.rir
+                        ?: "2"
+
+                    val restSeconds = parametros?.descansoSegundos
+                        ?: localExercise?.restSeconds
+                        ?: 90
+
+                    ExerciseSession(
+                        exerciseId = idEjercicio,
+                        name = ejercicio.nombre,
+                        sets = (1..series.coerceAtLeast(1)).map { setNumber ->
+                            SetSession(
+                                number = setNumber,
+                                previousWeight = 0.0,
+                                weight = "",
+                                reps = reps,
+                                rir = rir
+                            )
+                        },
+                        restSeconds = restSeconds
+                    )
                 }
-            )
+
+                if (exercisesFromBackend.isNotEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            routineName = selectedRoutine.name,
+                            exercises = exercisesFromBackend,
+                            error = null
+                        )
+                    }
+                } else if (selectedRoutine.exercises.isNotEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            routineName = selectedRoutine.name,
+                            exercises = selectedRoutine.exercises.map { exercise ->
+                                exercise.toExerciseSession()
+                            },
+                            error = null
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            routineName = selectedRoutine.name,
+                            exercises = defaultExerciseSessions(),
+                            error = "No se encontraron ejercicios para esta rutina."
+                        )
+                    }
+                }
+
+            } catch (e: Exception) {
+                val fallbackExercises =
+                    if (selectedRoutine.exercises.isNotEmpty()) {
+                        selectedRoutine.exercises.map { exercise ->
+                            exercise.toExerciseSession()
+                        }
+                    } else {
+                        defaultExerciseSessions()
+                    }
+
+                _uiState.update {
+                    it.copy(
+                        routineName = selectedRoutine.name,
+                        exercises = fallbackExercises,
+                        error = "No se pudieron cargar los parámetros del entrenamiento: ${e.message ?: "Error desconocido"}"
+                    )
+                }
+            }
         }
     }
 
@@ -77,7 +211,7 @@ class WorkoutSessionViewModel : ViewModel() {
         return ExerciseSession(
             exerciseId = id,
             name = name,
-            sets = (1..sets).map { setNumber ->
+            sets = (1..sets.coerceAtLeast(1)).map { setNumber ->
                 SetSession(
                     number = setNumber,
                     previousWeight = 0.0,
@@ -286,7 +420,8 @@ class WorkoutSessionViewModel : ViewModel() {
                         SetSession(2, 100.0, "", "10", "2"),
                         SetSession(3, 100.0, "", "10", "2"),
                         SetSession(4, 100.0, "", "10", "2")
-                    )
+                    ),
+                    restSeconds = 90
                 ),
                 ExerciseSession(
                     exerciseId = 2,
@@ -295,7 +430,8 @@ class WorkoutSessionViewModel : ViewModel() {
                         SetSession(1, 80.0, "", "12", "2"),
                         SetSession(2, 80.0, "", "12", "2"),
                         SetSession(3, 80.0, "", "12", "2")
-                    )
+                    ),
+                    restSeconds = 90
                 )
             )
         }

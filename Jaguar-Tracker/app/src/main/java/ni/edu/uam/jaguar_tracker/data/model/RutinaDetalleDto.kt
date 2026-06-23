@@ -15,6 +15,7 @@ data class RutinaDiaRequestDto(
 
 data class RutinaDiaResponseDto(
     val idRutinaDia: Int? = null,
+    val rutina: RutinaResponseDto? = null,
     val diaSemana: String? = null
 )
 
@@ -26,5 +27,7 @@ data class RutinaEjercicioRequestDto(
 
 data class RutinaEjercicioResponseDto(
     val idRutinaEjercicio: Int? = null,
+    val rutina: RutinaResponseDto? = null,
+    val ejercicio: EjercicioDto? = null,
     val orden: Int? = null
 )

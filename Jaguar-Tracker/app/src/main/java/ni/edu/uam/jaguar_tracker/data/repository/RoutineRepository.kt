@@ -90,6 +90,7 @@ object RoutineRepository {
             }
         }
     }
+
     suspend fun crearRutinaDiaBackend(
         idRutina: Int,
         diaSemana: String
@@ -150,5 +151,127 @@ object RoutineRepository {
         )
 
         return RetrofitClient.apiService.crearMicrocicloEjercicio(request)
+    }
+
+    suspend fun cargarRutinasDesdeBackend() {
+        val rutinasBackend = RetrofitClient.apiService.obtenerRutinas()
+
+        val rutinaDiasBackend = try {
+            RetrofitClient.apiService.obtenerRutinaDias()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val rutinaEjerciciosBackend = try {
+            RetrofitClient.apiService.obtenerRutinaEjercicios()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val microciclosBackend = try {
+            RetrofitClient.apiService.obtenerMicrociclos()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val microcicloEjerciciosBackend = try {
+            RetrofitClient.apiService.obtenerMicrocicloEjercicios()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val diasPorRutina = rutinaDiasBackend.groupBy { item ->
+            item.rutina?.idRutina
+        }
+
+        val ejerciciosPorRutina = rutinaEjerciciosBackend.groupBy { item ->
+            item.rutina?.idRutina
+        }
+
+        val microciclosPorRutina = microciclosBackend.groupBy { item ->
+            item.rutina?.idRutina
+        }
+
+        val parametrosPorRutinaEjercicio = microcicloEjerciciosBackend
+            .groupBy { item ->
+                item.rutinaEjercicio?.idRutinaEjercicio
+            }
+            .mapValues { entry ->
+                val items = entry.value
+
+                items.firstOrNull { item ->
+                    item.microciclo?.numeroMicrociclo == 1
+                } ?: items.firstOrNull()
+            }
+
+        val ordenDias = listOf(
+            "Lunes",
+            "Martes",
+            "Miércoles",
+            "Jueves",
+            "Viernes",
+            "Sábado",
+            "Domingo"
+        )
+
+        val rutinasUi = rutinasBackend.mapIndexedNotNull { index, rutina ->
+            val idRutina = rutina.idRutina ?: return@mapIndexedNotNull null
+
+            val selectedDays = diasPorRutina[idRutina]
+                .orEmpty()
+                .mapNotNull { it.diaSemana }
+                .distinct()
+                .sortedBy { dia ->
+                    ordenDias.indexOf(dia).takeIf { it >= 0 } ?: 99
+                }
+
+            val exercises = ejerciciosPorRutina[idRutina]
+                .orEmpty()
+                .sortedBy { it.orden ?: 999 }
+                .mapNotNull { rutinaEjercicio ->
+                    val ejercicio = rutinaEjercicio.ejercicio ?: return@mapNotNull null
+                    val idEjercicio = ejercicio.idEjercicio ?: return@mapNotNull null
+
+                    val parametros = parametrosPorRutinaEjercicio[
+                        rutinaEjercicio.idRutinaEjercicio
+                    ]
+
+                    ExerciseModel(
+                        id = idEjercicio,
+                        name = ejercicio.nombre,
+                        sets = parametros?.series ?: ejercicio.serieRecomendadas,
+                        reps = (parametros?.repeticiones ?: ejercicio.repeticionesRecomendadas).toString(),
+                        rir = (parametros?.rir ?: 2).toString(),
+                        restSeconds = parametros?.descansoSegundos ?: 90
+                    )
+                }
+
+            val weeklyPlans = microciclosPorRutina[idRutina]
+                .orEmpty()
+                .sortedBy { it.numeroMicrociclo ?: 999 }
+                .mapNotNull { microciclo ->
+                    val numero = microciclo.numeroMicrociclo ?: return@mapNotNull null
+
+                    WeeklyPlanModel(
+                        weekNumber = numero,
+                        intensity = microciclo.intensidad ?: "Media",
+                        volume = microciclo.volumen ?: "Normal"
+                    )
+                }
+
+            RoutineModel(
+                id = idRutina,
+                name = rutina.nombre ?: "Rutina sin nombre",
+                weeks = rutina.cantidadMicrociclos ?: weeklyPlans.size.takeIf { it > 0 } ?: 4,
+                trainingDays = selectedDays.size.takeIf { it > 0 } ?: 3,
+                selectedDays = selectedDays,
+                weeklyPlans = weeklyPlans,
+                exercises = exercises,
+                isSelected = index == 0,
+                hasEmoji = index == 0
+            )
+        }
+
+        _routines.value = rutinasUi
     }
 }

@@ -25,8 +25,34 @@ class HomeViewModel : ViewModel() {
     private val _errorEjercicios = MutableStateFlow<String?>(null)
     val errorEjercicios: StateFlow<String?> = _errorEjercicios
 
+    private val _isLoadingRutinas = MutableStateFlow(false)
+    val isLoadingRutinas: StateFlow<Boolean> = _isLoadingRutinas
+
+    private val _errorRutinas = MutableStateFlow<String?>(null)
+    val errorRutinas: StateFlow<String?> = _errorRutinas
+
+    init {
+        cargarRutinas()
+        cargarEjercicios()
+    }
+
     fun selectRoutine(routineId: Int) {
         RoutineRepository.selectRoutine(routineId)
+    }
+
+    fun cargarRutinas() {
+        viewModelScope.launch {
+            _isLoadingRutinas.value = true
+            _errorRutinas.value = null
+
+            try {
+                RoutineRepository.cargarRutinasDesdeBackend()
+            } catch (e: Exception) {
+                _errorRutinas.value = e.message ?: "No se pudieron cargar las rutinas"
+            } finally {
+                _isLoadingRutinas.value = false
+            }
+        }
     }
 
     fun cargarEjercicios() {
