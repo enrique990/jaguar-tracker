@@ -374,13 +374,31 @@ class NewRoutineViewModel : ViewModel() {
 
                 // Por ahora usamos idUsuario = 2 porque en tu prueba de Postman aparece ese usuario.
                 // Después lo cambiamos para usar el usuario real del login.
-                RoutineRepository.crearRutinaBackend(
+                val rutinaCreada = RoutineRepository.crearRutinaBackend(
                     idUsuario = 1,
                     nombre = state.routineName.trim(),
                     usaMicrociclos = state.planMesocycleEnabled,
                     cantidadMicrociclos = state.microcycles,
                     fechaCreacion = fechaCreacion
                 )
+
+                val idRutinaBackend = rutinaCreada.idRutina
+                    ?: throw Exception("El backend no devolvió el idRutina")
+
+                orderedDays.forEach { dia ->
+                    RoutineRepository.crearRutinaDiaBackend(
+                        idRutina = idRutinaBackend,
+                        diaSemana = dia
+                    )
+                }
+
+                state.selectedExercises.forEachIndexed { index, exercise ->
+                    RoutineRepository.crearRutinaEjercicioBackend(
+                        idRutina = idRutinaBackend,
+                        idEjercicio = exercise.id,
+                        orden = index + 1
+                    )
+                }
 
                 // Si el backend respondió bien, también la agregamos localmente para verla en Home.
                 RoutineRepository.addRoutine(

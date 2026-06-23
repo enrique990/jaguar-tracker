@@ -11,6 +11,10 @@ import ni.edu.uam.jaguar_tracker.data.model.RutinaResponseDto
 import ni.edu.uam.jaguar_tracker.data.model.UsuarioRefDto
 import ni.edu.uam.jaguar_tracker.data.model.WeeklyPlanModel
 import ni.edu.uam.jaguar_tracker.data.remote.RetrofitClient
+import ni.edu.uam.jaguar_tracker.data.model.EjercicioRefDto
+import ni.edu.uam.jaguar_tracker.data.model.RutinaDiaRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.RutinaRefDto
 
 object RoutineRepository {
 
@@ -78,5 +82,30 @@ object RoutineRepository {
                 )
             }
         }
+    }
+    suspend fun crearRutinaDiaBackend(
+        idRutina: Int,
+        diaSemana: String
+    ) {
+        val request = RutinaDiaRequestDto(
+            rutina = RutinaRefDto(idRutina = idRutina),
+            diaSemana = diaSemana
+        )
+
+        RetrofitClient.apiService.crearRutinaDia(request)
+    }
+
+    suspend fun crearRutinaEjercicioBackend(
+        idRutina: Int,
+        idEjercicio: Int,
+        orden: Int
+    ) {
+        val request = RutinaEjercicioRequestDto(
+            rutina = RutinaRefDto(idRutina = idRutina),
+            ejercicio = EjercicioRefDto(idEjercicio = idEjercicio),
+            orden = orden
+        )
+
+        RetrofitClient.apiService.crearRutinaEjercicio(request)
     }
 }
