@@ -1,10 +1,9 @@
-package ni.edu.uam.jaguar_tracker.ui.ranking
+package ni.edu.uam.jaguar_tracker.ui.Ranking
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,11 +20,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.home.JaguarBottomNavigation
 import ni.edu.uam.jaguar_tracker.ui.theme.*
 import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
 
 data class RankingUser(
     val rank: Int,
@@ -159,7 +158,7 @@ fun UploadRecordButton(modifier: Modifier = Modifier) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = stringResource(R.string.subir_record_personal),
+                    text = stringResource(R.string.subir_record_button),
                     color = JaguarBlack,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall
@@ -178,12 +177,12 @@ fun RankingListCard(users: List<RankingUser>, modifier: Modifier = Modifier) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = stringResource(R.string.clasificacion_fuerza_relativa),
+                text = stringResource(R.string.clasificacion_fuerza_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = JaguarWhite
             )
             Text(
-                text = stringResource(R.string.peso_levantado_peso_corporal),
+                text = stringResource(R.string.clasificacion_fuerza_subtitle),
                 style = MaterialTheme.typography.labelSmall,
                 color = JaguarGray
             )
@@ -295,7 +294,7 @@ fun UserPositionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.tu_posicion),
+                    text = stringResource(R.string.tu_posicion_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = JaguarWhite
                 )
@@ -317,12 +316,12 @@ fun UserPositionCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(R.string.fuerza_relativa),
+                    text = stringResource(R.string.fuerza_relativa_label),
                     style = MaterialTheme.typography.bodyMedium,
                     color = JaguarGray
                 )
                 Text(
-                    text = String.format(Locale.getDefault(), "%.2f", relativeStrength),
+                    text = String.format(LocalLocale.current.platformLocale, "%.2f", relativeStrength),
                     style = MaterialTheme.typography.bodyMedium,
                     color = JaguarWhite,
                     fontWeight = FontWeight.Bold
@@ -334,12 +333,12 @@ fun UserPositionCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(R.string.posiciones_top_10),
+                    text = stringResource(R.string.posiciones_top_10_label),
                     style = MaterialTheme.typography.bodyMedium,
                     color = JaguarGray
                 )
                 Text(
-                    text = String.format(Locale.getDefault(), "+%.2f", pointsToTop10),
+                    text = String.format(LocalLocale.current.platformLocale, "+%.2f", pointsToTop10),
                     style = MaterialTheme.typography.bodyMedium,
                     color = JaguarTeal,
                     fontWeight = FontWeight.Bold

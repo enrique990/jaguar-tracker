@@ -1,10 +1,14 @@
 package ni.edu.uam.jaguar_tracker.ui.login
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
+import ni.edu.uam.jaguar_tracker.data.repository.UsuarioRepository
 
 data class LoginState(
     val correo: String = "",
@@ -48,46 +52,64 @@ class LoginViewModel : ViewModel() {
         val contrasenaActual = currentState.contrasena
 
         if (correoActual.isBlank()) {
-            _uiState.update {
-                it.copy(error = "Debes ingresar tu correo")
-            }
+            _uiState.update { it.copy(error = "Debes ingresar tu correo") }
             return
         }
 
         if (!correoEsValido(correoActual)) {
-            _uiState.update {
-                it.copy(error = "Ingresa un correo válido")
-            }
+            _uiState.update { it.copy(error = "Ingresa un correo válido") }
             return
         }
 
         if (contrasenaActual.isBlank()) {
-            _uiState.update {
-                it.copy(error = "Debes ingresar tu contraseña")
-            }
+            _uiState.update { it.copy(error = "Debes ingresar tu contraseña") }
             return
         }
 
         if (contrasenaActual.length < 6) {
-            _uiState.update {
-                it.copy(error = "La contraseña debe tener mínimo 6 caracteres")
-            }
+            _uiState.update { it.copy(error = "La contraseña debe tener mínimo 6 caracteres") }
             return
         }
 
-        _uiState.update {
-            it.copy(
-                cargando = true,
-                error = null
-            )
-        }
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    cargando = true,
+                    error = null
+                )
+            }
 
-        // Login simulado hasta conectar con backend/API.
-        _uiState.update {
-            it.copy(
-                cargando = false,
-                loginExitoso = true
-            )
+            try {
+                val usuario = UsuarioRepository.iniciarSesion(
+                    correo = correoActual,
+                    contrasenia = contrasenaActual
+                )
+
+                val idUsuario = usuario.idUsuario
+                    ?: throw Exception("El backend no devolvió idUsuario")
+
+                UserSessionRepository.guardarSesion(
+                    idUsuario = idUsuario,
+                    correo = usuario.correo ?: correoActual
+                )
+
+                _uiState.update {
+                    it.copy(
+                        cargando = false,
+                        loginExitoso = true,
+                        error = null
+                    )
+                }
+
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        cargando = false,
+                        loginExitoso = false,
+                        error = e.message ?: "No se pudo iniciar sesión"
+                    )
+                }
+            }
         }
     }
 

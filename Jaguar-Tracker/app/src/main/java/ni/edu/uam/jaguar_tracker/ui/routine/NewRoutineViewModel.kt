@@ -15,7 +15,7 @@ import retrofit2.HttpException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
+import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
 data class Exercise(
     val id: Int,
     val name: String,
@@ -374,14 +374,15 @@ class NewRoutineViewModel : ViewModel() {
 
                 val fechaCreacion = obtenerFechaActualParaBackend()
 
+                val idUsuario = UserSessionRepository.requerirIdUsuarioActual()
+
                 val rutinaCreada = RoutineRepository.crearRutinaBackend(
-                    idUsuario = 1,
+                    idUsuario = idUsuario,
                     nombre = state.routineName.trim(),
                     usaMicrociclos = state.planMesocycleEnabled,
                     cantidadMicrociclos = state.microcycles,
                     fechaCreacion = fechaCreacion
                 )
-
                 val idRutinaBackend = rutinaCreada.idRutina
                     ?: throw Exception("El backend no devolvió idRutina")
 

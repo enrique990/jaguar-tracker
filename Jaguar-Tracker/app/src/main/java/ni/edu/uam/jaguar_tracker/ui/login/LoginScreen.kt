@@ -59,22 +59,7 @@ fun LoginContent(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier,
-        topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.TopEnd
-            ) {
-                IconButton(onClick = onProfileClick) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = stringResource(R.string.nav_perfil),
-                        tint = JaguarTeal
-                    )
-                }
-            }
-        }
+
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -239,5 +224,16 @@ fun LoginScreenPreview() {
             onIniciarSesion = {},
             onProfileClick = {}
         )
+    }
+}
+@Composable
+fun CheckingSessionScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(color = JaguarTeal)
     }
 }

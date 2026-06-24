@@ -9,41 +9,65 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
-import ni.edu.uam.jaguar_tracker.ui.ranking.RankingScreen
+import ni.edu.uam.jaguar_tracker.ui.Ranking.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
 import ni.edu.uam.jaguar_tracker.ui.routine.NewRoutineScreen
 import ni.edu.uam.jaguar_tracker.ui.session.WorkoutSessionScreen
 import ni.edu.uam.jaguar_tracker.ui.theme.JaguarTrackerTheme
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
 
 // Herencia -> MainActivity hereda de ComponentActivity, fundamental en Android
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            JaguarTrackerTheme {
-                // Composición -> Inyectamos la navegación principal
-                JaguarTrackerNavHost()
+
+        UserSessionRepository.init(applicationContext)
+
+        lifecycleScope.launch {
+            val session = withContext(Dispatchers.IO) {
+                UserSessionRepository.cargarSesion()
+            }
+
+            val startDestination = if (session != null) {
+                "home"
+            } else {
+                "login"
+            }
+
+            setContent {
+                JaguarTrackerTheme {
+                    JaguarTrackerNavHost(
+                        startDestination = startDestination
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun JaguarTrackerNavHost() {
+fun JaguarTrackerNavHost(
+    startDestination: String = "login"
+){
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = startDestination
     ) {
         composable("login") {
             LoginScreen(
                 onProfileClick = { navController.navigate("profile") },
                 onLoginSuccess = {
-                    navController.navigate("profile_setup") {
+                    navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
@@ -73,10 +97,18 @@ fun JaguarTrackerNavHost() {
         }
         composable("profile") {
             ProfileScreen(
-                onHomeClick = { navController.navigate("home") },
-                onHistoryClick = { navController.navigate("history") },
-                onRankingClick = { navController.navigate("ranking") },
-                onProfileClick = { /* Ya estamos en perfil */ }
+                onHomeClick = {
+                    navController.navigate("home")
+                },
+                onHistoryClick = {
+                    navController.navigate("history")
+                },
+                onLogoutSuccess = {
+                    navController.navigate("login") {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
             )
         }
         composable("new_routine") {

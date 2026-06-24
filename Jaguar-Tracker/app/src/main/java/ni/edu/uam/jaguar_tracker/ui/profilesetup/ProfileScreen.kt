@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.home.JaguarBottomNavigation
 import ni.edu.uam.jaguar_tracker.ui.theme.*
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
 
 @Composable
 fun ProfileScreen(
@@ -29,8 +32,10 @@ fun ProfileScreen(
     onHomeClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onRankingClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onLogoutSuccess: () -> Unit = {}
 ) {
+    val scope = rememberCoroutineScope()
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = JaguarBlack,
@@ -59,6 +64,16 @@ fun ProfileScreen(
             item { FeedbackSection() }
             item { ProfileNotificationSection() }
             item { GeneralStatsSection() }
+            item {
+                LogoutSection(
+                    onLogoutClick = {
+                        scope.launch {
+                            UserSessionRepository.cerrarSesion()
+                            onLogoutSuccess()
+                        }
+                    }
+                )
+            }
             item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
@@ -494,5 +509,28 @@ fun StatRow(label: String, value: String) {
 fun ProfileScreenPreview() {
     JaguarTrackerTheme {
         ProfileScreen()
+    }
+}
+@Composable
+fun LogoutSection(
+    onLogoutClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onLogoutClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = JaguarRed,
+            contentColor = JaguarWhite
+        )
+    ) {
+        Text(
+            text = "Cerrar sesión",
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }

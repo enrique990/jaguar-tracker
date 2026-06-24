@@ -17,6 +17,7 @@ import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoResponseDto
 import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.UsuarioDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -97,5 +98,7 @@ interface ApiService {
 
     @GET("api/series-realizadas")
     suspend fun obtenerSeriesRealizadas(): List<SerieRealizadaResponseDto>
-    
+
+    @GET("api/usuarios")
+    suspend fun obtenerUsuarios(): List<UsuarioDto>
 }
