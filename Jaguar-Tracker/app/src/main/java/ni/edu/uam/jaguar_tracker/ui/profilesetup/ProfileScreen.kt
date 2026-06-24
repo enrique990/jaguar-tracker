@@ -20,17 +20,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
+import ni.edu.uam.jaguar_tracker.ui.home.JaguarBottomNavigation
 import ni.edu.uam.jaguar_tracker.ui.theme.*
 
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    onNavigateToHome: () -> Unit = {}
+    onHomeClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
+    onRankingClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = JaguarBlack,
-        bottomBar = { ProfileBottomNavigation(onHomeClick = onNavigateToHome) }
+        bottomBar = {
+            JaguarBottomNavigation(
+                selectedTabIndex = 3,
+                onHomeClick = onHomeClick,
+                onHistoryClick = onHistoryClick,
+                onRankingClick = onRankingClick,
+                onProfileClick = onProfileClick
+            )
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -474,72 +486,6 @@ fun StatRow(label: String, value: String) {
     ) {
         Text(text = label, color = JaguarGray, style = MaterialTheme.typography.bodySmall)
         Text(text = value, color = JaguarWhite, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun ProfileBottomNavigation(
-    onHomeClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
-) {
-    NavigationBar(
-        containerColor = JaguarBlack,
-        tonalElevation = 0.dp,
-        modifier = Modifier.height(80.dp)
-    ) {
-        val items = listOf(
-            Triple(stringResource(R.string.nav_inicio), Icons.Default.Home, false),
-            Triple(stringResource(R.string.nav_historial), Icons.Default.History, false),
-            Triple(stringResource(R.string.nav_ranking), Icons.Default.EmojiEvents, false),
-            Triple(stringResource(R.string.nav_perfil), Icons.Default.Person, true)
-        )
-
-        items.forEachIndexed { index, (label, icon, selected) ->
-            NavigationBarItem(
-                selected = selected,
-                onClick = { 
-                    if (index == 0) onHomeClick()
-                    if (index == 3) onProfileClick()
-                },
-                icon = {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            icon,
-                            contentDescription = label,
-                            tint = if (selected) JaguarTeal else JaguarGray,
-                            modifier = Modifier.size(26.dp)
-                        )
-                        if (selected) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Box(
-                                modifier = Modifier
-                                    .width(20.dp)
-                                    .height(3.dp)
-                                    .background(JaguarGreen, RoundedCornerShape(2.dp))
-                            )
-                        }
-                    }
-                },
-                label = {
-                    Text(
-                        text = label,
-                        color = if (selected) JaguarTeal else JaguarGray,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = Color.Transparent,
-                    selectedIconColor = JaguarTeal,
-                    unselectedIconColor = JaguarGray,
-                    selectedTextColor = JaguarTeal,
-                    unselectedTextColor = JaguarGray
-                )
-            )
-        }
     }
 }
 

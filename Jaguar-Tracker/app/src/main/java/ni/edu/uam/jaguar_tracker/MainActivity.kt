@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
+import ni.edu.uam.jaguar_tracker.ui.ranking.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
@@ -66,12 +67,16 @@ fun JaguarTrackerNavHost() {
                 onNewRoutineClick = { navController.navigate("new_routine") },
                 onStartWorkoutClick = { navController.navigate("workout_session") },
                 onProfileClick = { navController.navigate("profile") },
-                onHistoryClick = { navController.navigate("history") }
+                onHistoryClick = { navController.navigate("history") },
+                onRankingClick = { navController.navigate("ranking") }
             )
         }
         composable("profile") {
             ProfileScreen(
-                onNavigateToHome = { navController.navigate("home") }
+                onHomeClick = { navController.navigate("home") },
+                onHistoryClick = { navController.navigate("history") },
+                onRankingClick = { navController.navigate("ranking") },
+                onProfileClick = { /* Ya estamos en perfil */ }
             )
         }
         composable("new_routine") {
@@ -87,6 +92,14 @@ fun JaguarTrackerNavHost() {
         composable("history") {
             HistoryScreen(
                 onHomeClick = { navController.navigate("home") },
+                onRankingClick = { navController.navigate("ranking") },
+                onProfileClick = { navController.navigate("profile") }
+            )
+        }
+        composable("ranking") {
+            RankingScreen(
+                onHomeClick = { navController.navigate("home") },
+                onHistoryClick = { navController.navigate("history") },
                 onProfileClick = { navController.navigate("profile") }
             )
         }
