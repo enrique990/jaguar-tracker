@@ -22,6 +22,7 @@ import ni.edu.uam.jaguar_tracker.data.model.MicrocicloRefDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaRefDto
 import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.UsuarioRefDto
+import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
 
 data class SetSession(
     val number: Int,
@@ -368,9 +369,10 @@ class WorkoutSessionViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
+                val idUsuario = UserSessionRepository.requerirIdUsuarioActual()
                 val entrenamientoCreado = RetrofitClient.apiService.crearEntrenamiento(
                     EntrenamientoRequestDto(
-                        usuario = UsuarioRefDto(idUsuario = ID_USUARIO_ACTUAL),
+                        usuario = UsuarioRefDto(idUsuario = idUsuario),
                         rutina = RutinaRefDto(idRutina = idRutina),
                         microciclo = MicrocicloRefDto(idMicrociclo = idMicrociclo),
                         fechaEntrenamiento = currentDateTimeForBackend(),
@@ -523,7 +525,6 @@ class WorkoutSessionViewModel : ViewModel() {
         return formatter.format(Date())
     }
     companion object {
-        private const val ID_USUARIO_ACTUAL = 1
         private fun defaultExerciseSessions(): List<ExerciseSession> {
 
             return listOf(
