@@ -61,7 +61,13 @@ fun HomeScreen(
     val routines by homeViewModel.routines.collectAsState()
     val selectedRoutine = routines.firstOrNull { it.isSelected }
     val weeks = buildWeeksFromSelectedRoutine(selectedRoutine)
+    val ejercicios by homeViewModel.ejercicios.collectAsState()
+    val isLoadingEjercicios by homeViewModel.isLoadingEjercicios.collectAsState()
+    val errorEjercicios by homeViewModel.errorEjercicios.collectAsState()
 
+    LaunchedEffect(Unit) {
+        homeViewModel.cargarEjercicios()
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -166,6 +172,15 @@ fun HomeScreen(
                         )
                     }
                 }
+            }
+
+            item {
+                BackendStatusCard(
+                    isLoading = isLoadingEjercicios,
+                    error = errorEjercicios,
+                    totalEjercicios = ejercicios.size,
+                    primerEjercicio = ejercicios.firstOrNull()?.nombre
+                )
             }
 
             // Weeks
@@ -585,6 +600,67 @@ fun EmptyHomeRoutineCard() {
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
             )
+        }
+    }
+}
+@Composable
+fun BackendStatusCard(
+    isLoading: Boolean,
+    error: String?,
+    totalEjercicios: Int,
+    primerEjercicio: String?
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(JaguarSurface, RoundedCornerShape(12.dp))
+            .border(1.dp, JaguarBorder, RoundedCornerShape(12.dp))
+            .padding(16.dp)
+    ) {
+        Column {
+            Text(
+                text = "Prueba de conexión backend",
+                color = JaguarWhite,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            when {
+                isLoading -> {
+                    Text(
+                        text = "Cargando ejercicios desde Spring Boot...",
+                        color = JaguarGray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                error != null -> {
+                    Text(
+                        text = "Error: $error",
+                        color = JaguarRed,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                else -> {
+                    Text(
+                        text = "Ejercicios recibidos: $totalEjercicios",
+                        color = JaguarGreen,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    if (primerEjercicio != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Primer ejercicio: $primerEjercicio",
+                            color = JaguarGray,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
         }
     }
 }
