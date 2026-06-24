@@ -88,4 +88,14 @@ interface ApiService {
     suspend fun crearSerieRealizada(
         @Body serieRealizada: SerieRealizadaRequestDto
     ): SerieRealizadaResponseDto
+
+    @GET("api/entrenamientos")
+    suspend fun obtenerEntrenamientos(): List<EntrenamientoResponseDto>
+
+    @GET("api/entrenamiento-ejercicios")
+    suspend fun obtenerEntrenamientoEjercicios(): List<EntrenamientoEjercicioResponseDto>
+
+    @GET("api/series-realizadas")
+    suspend fun obtenerSeriesRealizadas(): List<SerieRealizadaResponseDto>
+    
 }

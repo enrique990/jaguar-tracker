@@ -25,13 +25,17 @@ import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.home.JaguarBottomNavigation
 import ni.edu.uam.jaguar_tracker.ui.theme.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import java.util.Locale
 
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     onHomeClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    historyViewModel: HistoryViewModel = viewModel()
 ) {
+    val state by historyViewModel.uiState.collectAsState()
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = JaguarBlack,
@@ -69,20 +73,51 @@ fun HistoryScreen(
             }
 
             // Exercise Selector
-            ExerciseSelector(
-                label = stringResource(R.string.exercise_label),
-                selectedExercise = stringResource(R.string.press_de_banca)
-            )
+            when {
+                state.isLoading -> {
+                    Text(
+                        text = "Cargando historial...",
+                        color = JaguarGray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
-            // Time Filter Tabs
-            TimeFilterTabs()
+                state.error != null -> {
+                    Text(
+                        text = state.error ?: "",
+                        color = JaguarRed,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
-            // Progress Chart Card
-            ProgressChartCard()
+                state.points.isEmpty() -> {
+                    Text(
+                        text = "Todavía no hay entrenamientos completados.",
+                        color = JaguarGray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
-            // Stats Row
-            StatsRow()
+                else -> {
+                    ExerciseSelector(
+                        label = stringResource(R.string.exercise_label),
+                        selectedExercise = state.selectedExercise
+                    )
 
+                    TimeFilterTabs()
+
+                    ProgressChartCard(
+                        points = state.points,
+                        progressKg = state.bestWeight
+                    )
+
+                    StatsRow(
+                        estimatedOneRm = state.estimatedOneRm,
+                        progressPercent = state.progressPercent,
+                        microcycles = state.totalSessions
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -164,7 +199,13 @@ fun TimeFilterTabs(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ProgressChartCard(modifier: Modifier = Modifier) {
+fun ProgressChartCard(
+    points: List<HistoryPoint>,
+    progressKg: Double,
+    modifier: Modifier = Modifier
+) {
+    val maxWeight = points.maxOfOrNull { it.weight } ?: 1.0
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = JaguarSurface),
@@ -186,6 +227,7 @@ fun ProgressChartCard(modifier: Modifier = Modifier) {
                     color = JaguarWhite,
                     fontWeight = FontWeight.Bold
                 )
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.TrendingUp,
@@ -193,9 +235,11 @@ fun ProgressChartCard(modifier: Modifier = Modifier) {
                         tint = JaguarTeal,
                         modifier = Modifier.size(20.dp)
                     )
+
                     Spacer(modifier = Modifier.width(4.dp))
+
                     Text(
-                        text = "+12.5 kg",
+                        text = "${formatHistoryNumber(progressKg)} kg",
                         style = MaterialTheme.typography.titleMedium,
                         color = JaguarTeal,
                         fontWeight = FontWeight.Bold
@@ -203,47 +247,43 @@ fun ProgressChartCard(modifier: Modifier = Modifier) {
                 }
             }
 
-            // Simple Chart Implementation using Row/Box
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
             ) {
-                // Y-Axis Labels (Simulated)
-                Column(
-                    modifier = Modifier.fillMaxHeight(),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    YAxisLabel("100kg", "5 reps")
-                    YAxisLabel("85kg", "8 reps")
-                    YAxisLabel("70kg", "12 reps")
-                }
-
-                // Chart Bars
-                val bars = listOf(0.4f, 0.5f, 0.65f, 0.75f, 0.85f, 0.95f)
-                val dates = listOf("01/04", "08/04", "15/04", "22/04", "29/04", "06/05")
-
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(start = 50.dp, bottom = 24.dp),
+                        .padding(bottom = 28.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    bars.forEach { heightFactor ->
+                    points.forEach { point ->
+                        val factor = (point.weight / maxWeight).toFloat().coerceIn(0.15f, 1f)
+
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.weight(1f)
                         ) {
+                            Text(
+                                text = "${formatHistoryNumber(point.weight)}kg",
+                                color = JaguarGray,
+                                style = MaterialTheme.typography.labelSmall,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
                             Box(
                                 modifier = Modifier
-                                    .fillMaxHeight(heightFactor)
+                                    .fillMaxHeight(factor)
                                     .width(36.dp)
                                     .background(
                                         brush = Brush.verticalGradient(
                                             colors = listOf(
-                                                Color(0xFF00B2FF), // Top color
-                                                JaguarTeal      // Bottom color
+                                                Color(0xFF00B2FF),
+                                                JaguarTeal
                                             )
                                         ),
                                         shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
@@ -253,17 +293,15 @@ fun ProgressChartCard(modifier: Modifier = Modifier) {
                     }
                 }
 
-                // X-Axis Labels
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .padding(start = 50.dp),
+                        .align(Alignment.BottomCenter),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    dates.forEach { date ->
+                    points.forEach { point ->
                         Text(
-                            text = date,
+                            text = point.dateLabel,
                             style = MaterialTheme.typography.labelSmall,
                             color = JaguarGray,
                             modifier = Modifier.weight(1f),
@@ -286,25 +324,32 @@ fun YAxisLabel(weight: String, reps: String) {
 }
 
 @Composable
-fun StatsRow(modifier: Modifier = Modifier) {
+fun StatsRow(
+    estimatedOneRm: Double,
+    progressPercent: Double,
+    microcycles: Int,
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         StatCard(
             label = stringResource(R.string.estimated_1rm_label),
-            value = "105 kg",
+            value = "${formatHistoryNumber(estimatedOneRm)} kg",
             modifier = Modifier.weight(1f)
         )
+
         StatCard(
             label = stringResource(R.string.progress_label),
-            value = "+15.6%",
+            value = "${if (progressPercent >= 0) "+" else ""}${formatHistoryNumber(progressPercent)}%",
             valueColor = JaguarTeal,
             modifier = Modifier.weight(1f)
         )
+
         StatCard(
             label = stringResource(R.string.microcycles_label),
-            value = "6",
+            value = microcycles.toString(),
             modifier = Modifier.weight(1f)
         )
     }
@@ -343,6 +388,14 @@ fun StatCard(
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+fun formatHistoryNumber(value: Double): String {
+    return if (value % 1.0 == 0.0) {
+        value.toInt().toString()
+    } else {
+        String.format(Locale.US, "%.1f", value)
     }
 }
 

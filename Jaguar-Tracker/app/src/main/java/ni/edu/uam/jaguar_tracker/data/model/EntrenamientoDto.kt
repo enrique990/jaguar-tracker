@@ -10,6 +10,9 @@ data class EntrenamientoRequestDto(
 
 data class EntrenamientoResponseDto(
     val idEntrenamiento: Int? = null,
+    val usuario: UsuarioRefDto? = null,
+    val rutina: RutinaResponseDto? = null,
+    val microciclo: MicrocicloResponseDto? = null,
     val fechaEntrenamiento: String? = null,
     val completado: Boolean? = null
 )
@@ -28,7 +31,9 @@ data class EntrenamientoEjercicioRequestDto(
 )
 
 data class EntrenamientoEjercicioResponseDto(
-    val idEntrenamientoEjercicio: Int? = null
+    val idEntrenamientoEjercicio: Int? = null,
+    val entrenamiento: EntrenamientoResponseDto? = null,
+    val microcicloEjercicio: MicrocicloEjercicioResponseDto? = null
 )
 
 data class EntrenamientoEjercicioRefDto(
@@ -46,6 +51,7 @@ data class SerieRealizadaRequestDto(
 
 data class SerieRealizadaResponseDto(
     val idSerieRealizada: Int? = null,
+    val entrenamientoEjercicio: EntrenamientoEjercicioResponseDto? = null,
     val numeroSerie: Int? = null,
     val peso: Double? = null,
     val repeticiones: Int? = null,
