@@ -13,6 +13,15 @@ import ni.edu.uam.jaguar_tracker.data.repository.RoutineRepository
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoEjercicioRefDto
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoEjercicioRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoRefDto
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloEjercicioRefDto
+import ni.edu.uam.jaguar_tracker.data.model.MicrocicloRefDto
+import ni.edu.uam.jaguar_tracker.data.model.RutinaRefDto
+import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.UsuarioRefDto
 
 data class SetSession(
     val number: Int,
@@ -26,10 +35,13 @@ data class ExerciseSession(
     val exerciseId: Int,
     val name: String,
     val sets: List<SetSession>,
-    val restSeconds: Int = 90
+    val restSeconds: Int = 90,
+    val microcicloEjercicioId: Int? = null
 )
 
 data class WorkoutSessionUiState(
+    val routineId: Int? = null,
+    val microcicloId: Int? = null,
     val routineName: String = "Entrenamiento",
     val dateLabel: String = "",
     val isKg: Boolean = true,
@@ -61,6 +73,8 @@ class WorkoutSessionViewModel : ViewModel() {
             if (selectedRoutine == null) {
                 _uiState.update {
                     it.copy(
+                        routineId = null,
+                        microcicloId = null,
                         routineName = "Entrenamiento",
                         exercises = defaultExerciseSessions()
                     )
@@ -70,6 +84,7 @@ class WorkoutSessionViewModel : ViewModel() {
 
             _uiState.update {
                 it.copy(
+                    routineId = selectedRoutine.id,
                     routineName = selectedRoutine.name,
                     exercises = selectedRoutine.exercises.map { exercise ->
                         exercise.toExerciseSession()
@@ -154,13 +169,16 @@ class WorkoutSessionViewModel : ViewModel() {
                                 rir = rir
                             )
                         },
-                        restSeconds = restSeconds
+                        restSeconds = restSeconds,
+                        microcicloEjercicioId = parametros?.idMicrocicloEjercicio
                     )
                 }
 
                 if (exercisesFromBackend.isNotEmpty()) {
                     _uiState.update {
                         it.copy(
+                            routineId = selectedRoutine.id,
+                            microcicloId = microcicloBase?.idMicrociclo,
                             routineName = selectedRoutine.name,
                             exercises = exercisesFromBackend,
                             error = null
@@ -169,6 +187,8 @@ class WorkoutSessionViewModel : ViewModel() {
                 } else if (selectedRoutine.exercises.isNotEmpty()) {
                     _uiState.update {
                         it.copy(
+                            routineId = selectedRoutine.id,
+                            microcicloId = microcicloBase?.idMicrociclo,
                             routineName = selectedRoutine.name,
                             exercises = selectedRoutine.exercises.map { exercise ->
                                 exercise.toExerciseSession()
@@ -179,6 +199,8 @@ class WorkoutSessionViewModel : ViewModel() {
                 } else {
                     _uiState.update {
                         it.copy(
+                            routineId = selectedRoutine.id,
+                            microcicloId = microcicloBase?.idMicrociclo,
                             routineName = selectedRoutine.name,
                             exercises = defaultExerciseSessions(),
                             error = "No se encontraron ejercicios para esta rutina."
@@ -198,6 +220,7 @@ class WorkoutSessionViewModel : ViewModel() {
 
                 _uiState.update {
                     it.copy(
+                        routineId = selectedRoutine.id,
                         routineName = selectedRoutine.name,
                         exercises = fallbackExercises,
                         error = "No se pudieron cargar los parámetros del entrenamiento: ${e.message ?: "Error desconocido"}"
@@ -316,11 +339,98 @@ class WorkoutSessionViewModel : ViewModel() {
             return
         }
 
-        _uiState.update {
-            it.copy(
-                error = null,
-                successMessage = "Entrenamiento completado correctamente."
-            )
+        val idRutina = state.routineId
+        if (idRutina == null) {
+            _uiState.update {
+                it.copy(error = "No se encontró la rutina seleccionada.")
+            }
+            return
+        }
+
+        val idMicrociclo = state.microcicloId
+        if (idMicrociclo == null) {
+            _uiState.update {
+                it.copy(error = "No se encontró el microciclo del entrenamiento.")
+            }
+            return
+        }
+
+        val exerciseWithoutRelation = state.exercises.firstOrNull {
+            it.microcicloEjercicioId == null
+        }
+
+        if (exerciseWithoutRelation != null) {
+            _uiState.update {
+                it.copy(error = "No se encontró la relación de microciclo para ${exerciseWithoutRelation.name}.")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val entrenamientoCreado = RetrofitClient.apiService.crearEntrenamiento(
+                    EntrenamientoRequestDto(
+                        usuario = UsuarioRefDto(idUsuario = ID_USUARIO_ACTUAL),
+                        rutina = RutinaRefDto(idRutina = idRutina),
+                        microciclo = MicrocicloRefDto(idMicrociclo = idMicrociclo),
+                        fechaEntrenamiento = currentDateTimeForBackend(),
+                        completado = true
+                    )
+                )
+
+                val idEntrenamiento = entrenamientoCreado.idEntrenamiento
+                    ?: throw Exception("El backend no devolvió idEntrenamiento")
+
+                state.exercises.forEach { exercise ->
+                    val idMicrocicloEjercicio = exercise.microcicloEjercicioId
+                        ?: throw Exception("No se encontró idMicrocicloEjercicio para ${exercise.name}")
+
+                    val entrenamientoEjercicioCreado =
+                        RetrofitClient.apiService.crearEntrenamientoEjercicio(
+                            EntrenamientoEjercicioRequestDto(
+                                entrenamiento = EntrenamientoRefDto(
+                                    idEntrenamiento = idEntrenamiento
+                                ),
+                                microcicloEjercicio = MicrocicloEjercicioRefDto(
+                                    idMicrocicloEjercicio = idMicrocicloEjercicio
+                                )
+                            )
+                        )
+
+                    val idEntrenamientoEjercicio =
+                        entrenamientoEjercicioCreado.idEntrenamientoEjercicio
+                            ?: throw Exception("El backend no devolvió idEntrenamientoEjercicio para ${exercise.name}")
+
+                    exercise.sets.forEach { set ->
+                        RetrofitClient.apiService.crearSerieRealizada(
+                            SerieRealizadaRequestDto(
+                                entrenamientoEjercicio = EntrenamientoEjercicioRefDto(
+                                    idEntrenamientoEjercicio = idEntrenamientoEjercicio
+                                ),
+                                numeroSerie = set.number,
+                                peso = set.weight.toDoubleOrNull() ?: 0.0,
+                                repeticiones = set.reps.toIntOrNull() ?: 0,
+                                rir = set.rir.toIntOrNull() ?: 0,
+                                unidadMedida = if (state.isKg) "kg" else "lbs"
+                            )
+                        )
+                    }
+                }
+
+                _uiState.update {
+                    it.copy(
+                        error = null,
+                        successMessage = "Entrenamiento guardado correctamente en el backend."
+                    )
+                }
+
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        error = "No se pudo guardar el entrenamiento: ${e.message ?: "Error desconocido"}"
+                    )
+                }
+            }
         }
     }
 
@@ -408,9 +518,14 @@ class WorkoutSessionViewModel : ViewModel() {
             if (it.isLowerCase()) it.titlecase(locale) else it.toString()
         }
     }
-
+    private fun currentDateTimeForBackend(): String {
+        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        return formatter.format(Date())
+    }
     companion object {
+        private const val ID_USUARIO_ACTUAL = 1
         private fun defaultExerciseSessions(): List<ExerciseSession> {
+
             return listOf(
                 ExerciseSession(
                     exerciseId = 1,

@@ -11,9 +11,16 @@ import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaEjercicioResponseDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.RutinaResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoEjercicioRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoEjercicioResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoResponseDto
+import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaResponseDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+
 
 interface ApiService {
 
@@ -65,4 +72,20 @@ interface ApiService {
     suspend fun crearMicrocicloEjercicio(
         @Body microcicloEjercicio: MicrocicloEjercicioRequestDto
     ): MicrocicloEjercicioResponseDto
+
+    //entrenamientos
+    @POST("api/entrenamientos")
+    suspend fun crearEntrenamiento(
+        @Body entrenamiento: EntrenamientoRequestDto
+    ): EntrenamientoResponseDto
+
+    @POST("api/entrenamiento-ejercicios")
+    suspend fun crearEntrenamientoEjercicio(
+        @Body entrenamientoEjercicio: EntrenamientoEjercicioRequestDto
+    ): EntrenamientoEjercicioResponseDto
+
+    @POST("api/series-realizadas")
+    suspend fun crearSerieRealizada(
+        @Body serieRealizada: SerieRealizadaRequestDto
+    ): SerieRealizadaResponseDto
 }
