@@ -55,6 +55,7 @@ fun HomeScreen(
     onStartWorkoutClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
+    onRankingClick: () -> Unit = {},
     homeViewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -76,7 +77,8 @@ fun HomeScreen(
             JaguarBottomNavigation(
                 onProfileClick = onProfileClick,
                 onHomeClick = {}, // Already at Home
-                onHistoryClick = onHistoryClick
+                onHistoryClick = onHistoryClick,
+                onRankingClick = onRankingClick
             )
         }
     ) { paddingValues ->
@@ -439,7 +441,8 @@ fun JaguarBottomNavigation(
     selectedTabIndex: Int = 0,
     onProfileClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
-    onHistoryClick: () -> Unit = {}
+    onHistoryClick: () -> Unit = {},
+    onRankingClick: () -> Unit = {}
 ) {
     NavigationBar(
         containerColor = JaguarBlack,
@@ -461,6 +464,7 @@ fun JaguarBottomNavigation(
                     when (index) {
                         0 -> onHomeClick()
                         1 -> onHistoryClick()
+                        2 -> onRankingClick()
                         3 -> onProfileClick()
                     }
                 },

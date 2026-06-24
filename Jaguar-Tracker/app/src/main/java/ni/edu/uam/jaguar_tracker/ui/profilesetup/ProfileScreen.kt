@@ -20,17 +20,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ni.edu.uam.jaguar_tracker.R
+import ni.edu.uam.jaguar_tracker.ui.home.JaguarBottomNavigation
 import ni.edu.uam.jaguar_tracker.ui.theme.*
 
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    onNavigateToHome: () -> Unit = {}
+    onHomeClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
+    onRankingClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = JaguarBlack,
-        bottomBar = { ProfileBottomNavigation(onHomeClick = onNavigateToHome) }
+        bottomBar = {
+            JaguarBottomNavigation(
+                selectedTabIndex = 3,
+                onHomeClick = onHomeClick,
+                onHistoryClick = onHistoryClick,
+                onRankingClick = onRankingClick,
+                onProfileClick = onProfileClick
+            )
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier

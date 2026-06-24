@@ -32,6 +32,7 @@ import java.util.Locale
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     onHomeClick: () -> Unit = {},
+    onRankingClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     historyViewModel: HistoryViewModel = viewModel()
 ) {
@@ -43,6 +44,8 @@ fun HistoryScreen(
             JaguarBottomNavigation(
                 selectedTabIndex = 1,
                 onHomeClick = onHomeClick,
+                onHistoryClick = {}, // Ya estamos en historial
+                onRankingClick = onRankingClick,
                 onProfileClick = onProfileClick
             )
         }
