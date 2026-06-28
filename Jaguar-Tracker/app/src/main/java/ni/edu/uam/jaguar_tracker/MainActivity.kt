@@ -9,7 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
-import ni.edu.uam.jaguar_tracker.ui.Ranking.RankingScreen
+import ni.edu.uam.jaguar_tracker.ui.ranking.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
