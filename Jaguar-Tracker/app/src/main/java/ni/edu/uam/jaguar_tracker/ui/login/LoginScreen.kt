@@ -31,13 +31,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onProfileClick: () -> Unit = {},
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (String) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(state.loginExitoso) {
+    LaunchedEffect(state.loginExitoso, state.destinoDespuesLogin) {
         if (state.loginExitoso) {
-            onLoginSuccess()
+            onLoginSuccess(state.destinoDespuesLogin ?: "home")
         }
     }
 

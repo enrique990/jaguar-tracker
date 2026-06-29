@@ -20,17 +20,24 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.*
 
 @Composable
 fun ProfileSetupScreen(
     modifier: Modifier = Modifier,
-    onSave: (String, String) -> Unit = { _, _ -> },
-    onSkip: () -> Unit = {}
+    onSaveSuccess: () -> Unit = {},
+    onSkip: () -> Unit = {},
+    viewModel: ProfileSetupViewModel = viewModel()
 ) {
-    var weight by remember { mutableStateOf("70") }
-    var selectedGender by remember { mutableStateOf("Masculino") }
+    val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(state.savedSuccessfully) {
+        if (state.savedSuccessfully) {
+            onSaveSuccess()
+        }
+    }
 
     Scaffold(
         containerColor = JaguarBlack,
@@ -53,9 +60,20 @@ fun ProfileSetupScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             ProfileSetupTextField(
-                value = weight,
-                onValueChange = { weight = it }
+                value = state.weight,
+                enabled = !state.isSaving,
+                onValueChange = viewModel::onWeightChanged
             )
+
+            if (state.error != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = state.error ?: "",
+                    color = JaguarRed,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -64,8 +82,9 @@ fun ProfileSetupScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             GenderSelector(
-                selectedGender = selectedGender,
-                onGenderSelected = { selectedGender = it }
+                selectedGender = state.selectedGender,
+                enabled = !state.isSaving,
+                onGenderSelected = viewModel::onGenderChanged
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -75,7 +94,8 @@ fun ProfileSetupScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             ProfileSetupActions(
-                onSave = { onSave(weight, selectedGender) },
+                isSaving = state.isSaving,
+                onSave = viewModel::guardarPeso,
                 onSkip = onSkip
             )
         }
@@ -115,30 +135,42 @@ private fun ProfileSetupLabel(text: String) {
 @Composable
 private fun ProfileSetupTextField(
     value: String,
+    enabled: Boolean,
     onValueChange: (String) -> Unit
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
+        enabled = enabled,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = JaguarSurface,
             unfocusedContainerColor = JaguarSurface,
-            focusedBorderColor = JaguarBorder,
+            disabledContainerColor = JaguarSurface,
+            focusedBorderColor = JaguarTeal,
             unfocusedBorderColor = JaguarBorder,
+            disabledBorderColor = JaguarBorder,
             focusedTextColor = JaguarWhite,
             unfocusedTextColor = JaguarWhite,
+            disabledTextColor = JaguarGray,
             cursorColor = JaguarTeal
         ),
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        suffix = {
+            Text(
+                text = "kg",
+                color = JaguarGray
+            )
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
     )
 }
 
 @Composable
 private fun GenderSelector(
     selectedGender: String,
+    enabled: Boolean,
     onGenderSelected: (String) -> Unit
 ) {
     val options = listOf(
@@ -161,15 +193,12 @@ private fun GenderSelector(
                     .background(JaguarSurface)
                     .border(
                         width = 1.dp,
-                        color = if (isSelected) JaguarBorder.copy(alpha = 0.8f) else JaguarBorder,
+                        color = if (isSelected) JaguarWhite.copy(alpha = 0.5f) else JaguarBorder,
                         shape = RoundedCornerShape(12.dp)
                     )
-                    .border(
-                        width = if (isSelected) 1.dp else 0.dp,
-                        color = if (isSelected) JaguarWhite.copy(alpha = 0.5f) else Color.Transparent,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .clickable { onGenderSelected(option) },
+                    .clickable(enabled = enabled) {
+                        onGenderSelected(option)
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -208,6 +237,7 @@ private fun WeightWarning() {
                     }
                     drawPath(path, color = Color(0xFFEBB134))
                 }
+
                 Text(
                     text = "!",
                     color = JaguarBlack,
@@ -231,6 +261,7 @@ private fun WeightWarning() {
 
 @Composable
 private fun ProfileSetupActions(
+    isSaving: Boolean,
     onSave: () -> Unit,
     onSkip: () -> Unit
 ) {
@@ -240,13 +271,16 @@ private fun ProfileSetupActions(
     ) {
         Button(
             onClick = onSkip,
+            enabled = !isSaving,
             modifier = Modifier
                 .weight(1f)
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
-                contentColor = JaguarWhite
+                contentColor = JaguarWhite,
+                disabledContainerColor = Color.Transparent,
+                disabledContentColor = JaguarGray
             ),
             border = androidx.compose.foundation.BorderStroke(1.dp, JaguarBorder)
         ) {
@@ -259,20 +293,31 @@ private fun ProfileSetupActions(
 
         Button(
             onClick = onSave,
+            enabled = !isSaving,
             modifier = Modifier
                 .weight(1f)
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = JaguarTeal,
-                contentColor = JaguarBlack
+                contentColor = JaguarBlack,
+                disabledContainerColor = JaguarGray,
+                disabledContentColor = JaguarBlack
             )
         ) {
-            Text(
-                text = stringResource(R.string.save_button),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            if (isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = JaguarBlack,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.save_button),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

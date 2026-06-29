@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
 import ni.edu.uam.jaguar_tracker.data.repository.UsuarioRepository
+import ni.edu.uam.jaguar_tracker.data.remote.RetrofitClient
 
 data class LoginState(
     val correo: String = "",
@@ -16,6 +17,7 @@ data class LoginState(
     val cargando: Boolean = false,
     val error: String? = null,
     val loginExitoso: Boolean = false,
+    val destinoDespuesLogin: String? = null
 )
 
 class LoginViewModel : ViewModel() {
@@ -91,12 +93,23 @@ class LoginViewModel : ViewModel() {
                 UserSessionRepository.guardarSesion(
                     idUsuario = idUsuario,
                     correo = usuario.correo ?: correoActual
+
                 )
+                val tienePesoRegistrado = RetrofitClient.apiService.obtenerPesosUsuarios().any { peso ->
+                    peso.usuario?.idUsuario == idUsuario
+                }
+
+                val destino = if (tienePesoRegistrado) {
+                    "home"
+                } else {
+                    "profile_setup"
+                }
 
                 _uiState.update {
                     it.copy(
                         cargando = false,
                         loginExitoso = true,
+                        destinoDespuesLogin = destino,
                         error = null
                     )
                 }

@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ni.edu.uam.jaguar_tracker.data.remote.RetrofitClient
 import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
 
 // Herencia -> MainActivity hereda de ComponentActivity, fundamental en Android
@@ -36,10 +37,26 @@ class MainActivity : ComponentActivity() {
                 UserSessionRepository.cargarSesion()
             }
 
-            val startDestination = if (session != null) {
-                "home"
-            } else {
-                "login"
+            val startDestination = withContext(Dispatchers.IO) {
+                val session = UserSessionRepository.cargarSesion()
+
+                if (session == null) {
+                    "login"
+                } else {
+                    val tienePesoRegistrado = try {
+                        RetrofitClient.apiService.obtenerPesosUsuarios().any { peso ->
+                            peso.usuario?.idUsuario == session.idUsuario
+                        }
+                    } catch (e: Exception) {
+                        true
+                    }
+
+                    if (tienePesoRegistrado) {
+                        "home"
+                    } else {
+                        "profile_setup"
+                    }
+                }
             }
 
             setContent {
@@ -66,9 +83,11 @@ fun JaguarTrackerNavHost(
         composable("login") {
             LoginScreen(
                 onProfileClick = { navController.navigate("profile") },
-                onLoginSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                onLoginSuccess = { destino ->
+                    navController.navigate(destino) {
+                        popUpTo("login") {
+                            inclusive = true
+                        }
                         launchSingleTop = true
                     }
                 }
@@ -76,14 +95,20 @@ fun JaguarTrackerNavHost(
         }
         composable("profile_setup") {
             ProfileSetupScreen(
-                onSave = { _, _ ->
+                onSaveSuccess = {
                     navController.navigate("home") {
-                        popUpTo("profile_setup") { inclusive = true }
+                        popUpTo("profile_setup") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
                     }
                 },
                 onSkip = {
                     navController.navigate("home") {
-                        popUpTo("profile_setup") { inclusive = true }
+                        popUpTo("profile_setup") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
                     }
                 }
             )

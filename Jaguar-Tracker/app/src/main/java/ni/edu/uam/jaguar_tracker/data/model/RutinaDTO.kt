@@ -14,6 +14,7 @@ data class RutinaRequestDto(
 
 data class RutinaResponseDto(
     val idRutina: Int? = null,
+    val usuario: UsuarioRefDto? = null,
     val nombre: String? = null,
     val usaMicrociclos: Boolean? = null,
     val cantidadMicrociclos: Int? = null,

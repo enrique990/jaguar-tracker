@@ -68,13 +68,7 @@ fun HomeScreen(
     val routines by homeViewModel.routines.collectAsState()
     val selectedRoutine = routines.firstOrNull { it.isSelected }
     val weeks = buildWeeksFromSelectedRoutine(selectedRoutine)
-    val ejercicios by homeViewModel.ejercicios.collectAsState()
-    val isLoadingEjercicios by homeViewModel.isLoadingEjercicios.collectAsState()
-    val errorEjercicios by homeViewModel.errorEjercicios.collectAsState()
 
-    LaunchedEffect(Unit) {
-        homeViewModel.cargarEjercicios()
-    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -96,40 +90,6 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
-
-            // Header
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.mesocycle_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = JaguarWhite
-                        )
-                        Text(
-                            text = stringResource(R.string.mesocycle_subtitle),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = JaguarGreen
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = stringResource(R.string.progress_percentage),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = JaguarWhite
-                        )
-                        Text(
-                            text = stringResource(R.string.completed_label),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = JaguarGray
-                        )
-                    }
-                }
-            }
 
             // Rutinas
             item {
@@ -188,14 +148,6 @@ fun HomeScreen(
                 }
             }
 
-            item {
-                BackendStatusCard(
-                    isLoading = isLoadingEjercicios,
-                    error = errorEjercicios,
-                    totalEjercicios = ejercicios.size,
-                    primerEjercicio = ejercicios.firstOrNull()?.nombre
-                )
-            }
 
             // Weeks
             if (routines.isEmpty()) {
@@ -215,32 +167,6 @@ fun HomeScreen(
                             }
                         }
                     )
-                }
-            }
-
-            // Agregar Semana Button
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .border(
-                            width = 1.dp,
-                            color = JaguarBorder,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clickable { /* TODO */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = JaguarWhite, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.add_week_button),
-                            color = JaguarWhite,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
                 }
             }
 
@@ -279,7 +205,7 @@ fun RoutineCard(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "${routine.id}: ${routine.name}${if (routine.hasEmoji) " 💪" else ""}",
+                    text = "${routine.name}${if (routine.hasEmoji) " 💪" else ""}",
                     color = if (routine.isSelected) JaguarGreen else JaguarWhite,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyMedium,
@@ -766,67 +692,6 @@ fun EmptyHomeRoutineCard() {
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium
             )
-        }
-    }
-}
-@Composable
-fun BackendStatusCard(
-    isLoading: Boolean,
-    error: String?,
-    totalEjercicios: Int,
-    primerEjercicio: String?
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(JaguarSurface, RoundedCornerShape(12.dp))
-            .border(1.dp, JaguarBorder, RoundedCornerShape(12.dp))
-            .padding(16.dp)
-    ) {
-        Column {
-            Text(
-                text = "Prueba de conexión backend",
-                color = JaguarWhite,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            when {
-                isLoading -> {
-                    Text(
-                        text = "Cargando ejercicios desde Spring Boot...",
-                        color = JaguarGray,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                error != null -> {
-                    Text(
-                        text = "Error: $error",
-                        color = JaguarRed,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                else -> {
-                    Text(
-                        text = "Ejercicios recibidos: $totalEjercicios",
-                        color = JaguarGreen,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    if (primerEjercicio != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Primer ejercicio: $primerEjercicio",
-                            color = JaguarGray,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
         }
     }
 }
