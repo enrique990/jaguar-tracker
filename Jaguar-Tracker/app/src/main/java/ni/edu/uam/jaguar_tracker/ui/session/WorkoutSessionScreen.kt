@@ -77,7 +77,9 @@ fun WorkoutSessionScreen(
                         isKg = state.isKg,
                         onUnitToggle = sessionViewModel::toggleUnit,
                         routineName = state.routineName,
-                        dateLabel = state.dateLabel
+                        dateLabel = state.dateLabel,
+                        weekNumber = state.weekNumber,
+                        day = state.day
                     )
                 }
 
@@ -167,7 +169,9 @@ fun WorkoutSessionHeader(
     isKg: Boolean,
     onUnitToggle: (Boolean) -> Unit,
     routineName: String,
-    dateLabel: String
+    dateLabel: String,
+    weekNumber: Int? = null,
+    day: String? = null
 ) {
     val safeBackClick = rememberSafeClick {
         onBackClick()
@@ -225,10 +229,15 @@ fun WorkoutSessionHeader(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = stringResource(R.string.workout_title_format, routineName),
+            text = if (weekNumber != null && day != null) {
+                "$routineName - Sem $weekNumber ($day)"
+            } else {
+                stringResource(R.string.workout_title_format, routineName)
+            },
             style = MaterialTheme.typography.displayLarge.copy(
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-1).sp
+                letterSpacing = (-1).sp,
+                fontSize = if (routineName.length > 15) 32.sp else 40.sp
             ),
             color = JaguarWhite
         )

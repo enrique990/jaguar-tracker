@@ -23,5 +23,8 @@ data class RoutineModel(
     val weeklyPlans: List<WeeklyPlanModel> = emptyList(),
     val exercises: List<ExerciseModel> = emptyList(),
     val isSelected: Boolean = false,
-    val hasEmoji: Boolean = false
+    val hasEmoji: Boolean = false,
+    val createdAt: String? = null,
+    val skippedWorkouts: Set<String> = emptySet(),
+    val completedWorkouts: Set<String> = emptySet()
 )

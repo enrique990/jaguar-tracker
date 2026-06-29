@@ -1,4 +1,4 @@
-package ni.edu.uam.jaguar_tracker.ui.ranking
+package ni.edu.uam.jaguar_tracker.ui.rankings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

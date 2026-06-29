@@ -50,6 +50,10 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    fun saltarEntrenamiento(routineId: Int, weekNumber: Int, day: String) {
+        RoutineRepository.skipWorkout(routineId, weekNumber, day)
+    }
+
     fun cargarRutinas() {
         viewModelScope.launch {
             _isLoadingRutinas.value = true

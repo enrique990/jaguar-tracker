@@ -1,5 +1,6 @@
 package ni.edu.uam.jaguar_tracker.ui.session
 
+import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import androidx.lifecycle.ViewModel
@@ -45,6 +46,8 @@ data class ExerciseSession(
 data class WorkoutSessionUiState(
     val routineId: Int? = null,
     val microcicloId: Int? = null,
+    val weekNumber: Int? = null,
+    val day: String? = null,
     val routineName: String = "Entrenamiento",
     val dateLabel: String = "",
     val isKg: Boolean = true,
@@ -55,12 +58,16 @@ data class WorkoutSessionUiState(
     val activeTimerExerciseId: Int? = null
 )
 
-class WorkoutSessionViewModel : ViewModel() {
+class WorkoutSessionViewModel(
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         WorkoutSessionUiState(
             dateLabel = currentDateLabel(),
-            exercises = emptyList()
+            exercises = emptyList(),
+            weekNumber = savedStateHandle.get<Int>("weekNumber"),
+            day = savedStateHandle.get<String>("day")
         )
     )
 
@@ -136,7 +143,11 @@ class WorkoutSessionViewModel : ViewModel() {
                         microciclo.numeroMicrociclo ?: 999
                     }
 
+                val targetWeek = _uiState.value.weekNumber ?: 1
+
                 val microcicloBase = microciclosBackend.firstOrNull { microciclo ->
+                    microciclo.numeroMicrociclo == targetWeek
+                } ?: microciclosBackend.firstOrNull { microciclo ->
                     microciclo.numeroMicrociclo == 1
                 } ?: microciclosBackend.firstOrNull()
 
@@ -450,6 +461,14 @@ class WorkoutSessionViewModel : ViewModel() {
                         error = null,
                         successMessage = "Entrenamiento guardado correctamente en el backend."
                     )
+                }
+
+                idRutina.let { rid ->
+                    state.weekNumber?.let { wn ->
+                        state.day?.let { d ->
+                            RoutineRepository.completeWorkout(rid, wn, d)
+                        }
+                    }
                 }
 
             } catch (e: Exception) {

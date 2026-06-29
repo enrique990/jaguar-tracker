@@ -9,7 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import ni.edu.uam.jaguar_tracker.ui.ranking.RankingScreen
+import ni.edu.uam.jaguar_tracker.ui.rankings.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
@@ -94,7 +94,9 @@ fun JaguarTrackerNavHost(
                     val route = if (routineId != null) "new_routine?routineId=$routineId" else "new_routine"
                     navController.navigate(route)
                 },
-                onStartWorkoutClick = { navController.navigate("workout_session") },
+                onStartWorkoutClick = { workout -> 
+                    navController.navigate("workout_session?weekNumber=${workout.weekNumber}&day=${workout.day}") 
+                },
                 onProfileClick = { navController.navigate("profile") },
                 onHistoryClick = { navController.navigate("history") },
                 onRankingClick = { navController.navigate("ranking") }
@@ -129,7 +131,19 @@ fun JaguarTrackerNavHost(
                 navController.popBackStack()
             }
         }
-        composable("workout_session") {
+        composable(
+            "workout_session?weekNumber={weekNumber}&day={day}",
+            arguments = listOf(
+                navArgument("weekNumber") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                },
+                navArgument("day") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) {
             WorkoutSessionScreen(
                 onBackClick = { navController.popBackStack() },
             )

@@ -42,7 +42,10 @@ data class Workout(
     val duration: Int,
     val exercises: Int,
     val isLocked: Boolean = false,
-    val isCurrent: Boolean = false
+    val isCurrent: Boolean = false,
+    val isDone: Boolean = false,
+    val isSkipped: Boolean = false,
+    val weekNumber: Int = 1
 )
 
 data class Week(
@@ -55,7 +58,7 @@ data class Week(
 @Composable
 fun HomeScreen(
     onNewRoutineClick: (Int?) -> Unit = {},
-    onStartWorkoutClick: () -> Unit = {},
+    onStartWorkoutClick: (Workout) -> Unit = {},
     onProfileClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onRankingClick: () -> Unit = {},
@@ -203,7 +206,14 @@ fun HomeScreen(
                 items(weeks) { week ->
                     WeekAccordion(
                         week = week,
-                        onStartWorkoutClick = onStartWorkoutClick
+                        onStartWorkoutClick = { workout ->
+                            onStartWorkoutClick(workout)
+                        },
+                        onSkipWorkoutClick = { workout ->
+                            selectedRoutine?.let {
+                                homeViewModel.saltarEntrenamiento(it.id, workout.weekNumber, workout.day)
+                            }
+                        }
                     )
                 }
             }
@@ -325,7 +335,8 @@ fun RoutineCard(
 @Composable
 fun WeekAccordion(
     week: Week,
-    onStartWorkoutClick: () -> Unit = {}
+    onStartWorkoutClick: (Workout) -> Unit = {},
+    onSkipWorkoutClick: (Workout) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(week.isExpanded) }
 
@@ -387,7 +398,8 @@ fun WeekAccordion(
                 week.workouts.forEach { workout ->
                     WorkoutCard(
                         workout = workout,
-                        onStartWorkoutClick = onStartWorkoutClick
+                        onStartWorkoutClick = { onStartWorkoutClick(workout) },
+                        onSkipClick = { onSkipWorkoutClick(workout) }
                     )
                 }
             }
@@ -398,17 +410,25 @@ fun WeekAccordion(
 @Composable
 fun WorkoutCard(
     workout: Workout,
-    onStartWorkoutClick: () -> Unit = {}
+    onStartWorkoutClick: (Workout) -> Unit = {},
+    onSkipClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 width = 1.dp,
-                color = if (workout.isCurrent) JaguarGreen else JaguarBorder,
+                color = when {
+                    workout.isDone -> JaguarGreen
+                    workout.isSkipped -> JaguarGray
+                    workout.isCurrent -> JaguarGreen
+                    else -> JaguarBorder
+                },
                 shape = RoundedCornerShape(12.dp)
             ),
-        colors = CardDefaults.cardColors(containerColor = JaguarCard),
+        colors = CardDefaults.cardColors(
+            containerColor = if (workout.isSkipped) JaguarSurface else JaguarCard
+        ),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -430,13 +450,35 @@ fun WorkoutCard(
                     }
                     Text(
                         text = workout.day,
-                        color = if (workout.isCurrent) JaguarTeal else JaguarGray,
+                        color = when {
+                            workout.isDone -> JaguarGreen
+                            workout.isSkipped -> JaguarGray
+                            workout.isCurrent -> JaguarTeal
+                            else -> JaguarGray
+                        },
                         style = MaterialTheme.typography.labelLarge
                     )
+                    
+                    if (workout.isDone) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "(Hecho)",
+                            color = JaguarGreen,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                    if (workout.isSkipped) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "(Saltado)",
+                            color = JaguarGray,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
                 Text(
                     text = workout.name,
-                    color = JaguarWhite,
+                    color = if (workout.isSkipped) JaguarGray else JaguarWhite,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -446,7 +488,7 @@ fun WorkoutCard(
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
-                                .background(workout.difficultyColor, CircleShape)
+                                .background(if (workout.isSkipped) JaguarGray else workout.difficultyColor, CircleShape)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -472,16 +514,33 @@ fun WorkoutCard(
                 }
             }
 
-            if (workout.isLocked) {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
-            } else {
-                IconButton(
-                    onClick = onStartWorkoutClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(JaguarTeal, CircleShape)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = JaguarBlack)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (workout.isCurrent && !workout.isDone) {
+                    TextButton(
+                        onClick = onSkipClick,
+                        colors = ButtonDefaults.textButtonColors(contentColor = JaguarRed)
+                    ) {
+                        Text("Saltar")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                if (workout.isLocked) {
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
+                } else if (workout.isDone) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = JaguarGreen, modifier = Modifier.size(28.dp))
+                } else if (workout.isSkipped) {
+                    Icon(Icons.Default.Block, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
+                } else {
+                    IconButton(
+                        onClick = { onStartWorkoutClick(workout) },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(JaguarTeal, CircleShape)
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = JaguarBlack)
+                    }
                 }
             }
         }
@@ -584,12 +643,15 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
         "Domingo"
     )
 
-    // Obtener el día actual de la semana
-    val today = LocalDate.now()
-    val currentDayOfWeek = today.dayOfWeek
-    
-    // Mapear DayOfWeek de Java a nuestro índice de orderedDays (0 = Lunes, 6 = Domingo)
-    val currentDayIndex = when (currentDayOfWeek) {
+    // Parse createdAt date to know when the routine started
+    val creationDate = try {
+        LocalDate.parse(routine.createdAt?.substringBefore('T'))
+    } catch (_: Exception) {
+        LocalDate.now()
+    }
+
+    val creationDayOfWeek = creationDate.dayOfWeek
+    val creationDayIndex = when (creationDayOfWeek) {
         DayOfWeek.MONDAY -> 0
         DayOfWeek.TUESDAY -> 1
         DayOfWeek.WEDNESDAY -> 2
@@ -608,7 +670,18 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
 
     val exercisesCount = routine.exercises.size.coerceAtLeast(1)
 
+    // Decidir si la Semana 1 debe filtrar días o empezar completa
+    // Si hoy es Domingo y NO elegí Domingo, la Semana 1 filtrada quedaría vacía.
+    // En ese caso, mejor NO filtrar y que la Semana 1 empiece "la próxima semana" completa.
+    val hasAvailableDaysInWeek1 = selectedDays.any { day ->
+        orderedDays.indexOf(day) >= creationDayIndex
+    }
+
+    // Encontrar el primer entrenamiento pendiente (ni hecho ni saltado)
+    var foundCurrent = false
+
     return (1..routine.weeks).map { weekNumber ->
+        // ... (resto del mapeo)
 
         val weeklyPlan = routine.weeklyPlans.firstOrNull {
             it.weekNumber == weekNumber
@@ -624,17 +697,25 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
             else -> Color(0xFFFFA500)
         }
 
-        // Para esta lógica, asumiremos que la "semana actual" es la semana 1 si no hay fecha de inicio.
-        // En una implementación real, se compararía la fecha actual con la fecha de inicio de la rutina.
-        val isCurrentWeek = weekNumber == 1 
-
-        val workouts = selectedDays.map { day ->
+        val workouts = selectedDays.mapNotNull { day ->
             val dayIndexInOrdered = orderedDays.indexOf(day)
+
+            // Solo filtramos si hay al menos un día disponible esta semana.
+            // Si no hay ninguno (ej. hoy domingo y no entreno hoy), mostramos la semana 1 completa para el futuro.
+            if (weekNumber == 1 && hasAvailableDaysInWeek1 && dayIndexInOrdered < creationDayIndex) {
+                return@mapNotNull null
+            }
+
+            val workoutId = "$weekNumber-$day"
+            val isDone = routine.completedWorkouts.contains(workoutId)
+            val isSkipped = routine.skippedWorkouts.contains(workoutId)
             
-            // Un entrenamiento está bloqueado si es de la semana actual y el día ya pasó,
-            // o si es de una semana pasada (aunque usualmente las pasadas se marcan como completadas).
-            val isPastDay = isCurrentWeek && dayIndexInOrdered < currentDayIndex
-            val isToday = isCurrentWeek && dayIndexInOrdered == currentDayIndex
+            val isCurrent = if (!foundCurrent && !isDone && !isSkipped) {
+                foundCurrent = true
+                true
+            } else {
+                false
+            }
 
             Workout(
                 day = day,
@@ -643,16 +724,19 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
                 difficultyColor = difficultyColor,
                 duration = (exercisesCount * 12) + 15,
                 exercises = exercisesCount,
-                isLocked = isPastDay,
-                isCurrent = isToday
+                isLocked = false, // El usuario pidió que no se bloqueen
+                isCurrent = isCurrent,
+                isDone = isDone,
+                isSkipped = isSkipped,
+                weekNumber = weekNumber
             )
         }
 
         Week(
             number = weekNumber,
             workouts = workouts,
-            isExpanded = isCurrentWeek,
-            hasEmoji = isCurrentWeek
+            isExpanded = workouts.any { it.isCurrent } || (weekNumber == 1 && workouts.isNotEmpty()),
+            hasEmoji = workouts.any { it.isCurrent }
         )
     }
 }

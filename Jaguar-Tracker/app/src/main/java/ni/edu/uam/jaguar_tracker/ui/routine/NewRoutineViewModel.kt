@@ -522,7 +522,8 @@ class NewRoutineViewModel(
                         weeks = state.microcycles,
                         trainingDays = state.selectedWeekDays.size,
                         selectedDays = orderedDays,
-                        weeklyPlans = weeklyPlansToSave
+                        weeklyPlans = weeklyPlansToSave,
+                        createdAt = fechaCreacion
                     )
                 }
 
