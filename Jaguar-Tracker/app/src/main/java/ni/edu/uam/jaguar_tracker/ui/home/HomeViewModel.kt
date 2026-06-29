@@ -40,6 +40,20 @@ class HomeViewModel : ViewModel() {
         RoutineRepository.selectRoutine(routineId)
     }
 
+    fun eliminarRutina(routineId: Int) {
+        viewModelScope.launch {
+            try {
+                RoutineRepository.eliminarRutinaBackend(routineId)
+            } catch (e: Exception) {
+                _errorRutinas.value = "No se pudo eliminar la rutina: ${e.message}"
+            }
+        }
+    }
+
+    fun saltarEntrenamiento(routineId: Int, weekNumber: Int, day: String) {
+        RoutineRepository.skipWorkout(routineId, weekNumber, day)
+    }
+
     fun cargarRutinas() {
         viewModelScope.launch {
             _isLoadingRutinas.value = true

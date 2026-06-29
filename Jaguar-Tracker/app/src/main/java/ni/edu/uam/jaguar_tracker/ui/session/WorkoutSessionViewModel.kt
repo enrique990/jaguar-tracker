@@ -1,5 +1,8 @@
 package ni.edu.uam.jaguar_tracker.ui.session
 
+import androidx.lifecycle.SavedStateHandle
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,27 +46,57 @@ data class ExerciseSession(
 data class WorkoutSessionUiState(
     val routineId: Int? = null,
     val microcicloId: Int? = null,
+    val weekNumber: Int? = null,
+    val day: String? = null,
     val routineName: String = "Entrenamiento",
     val dateLabel: String = "",
     val isKg: Boolean = true,
     val exercises: List<ExerciseSession> = emptyList(),
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val timerRemainingSeconds: Int? = null,
+    val activeTimerExerciseId: Int? = null
 )
 
-class WorkoutSessionViewModel : ViewModel() {
+class WorkoutSessionViewModel(
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         WorkoutSessionUiState(
             dateLabel = currentDateLabel(),
-            exercises = emptyList()
+            exercises = emptyList(),
+            weekNumber = savedStateHandle.get<Int>("weekNumber"),
+            day = savedStateHandle.get<String>("day")
         )
     )
 
     val uiState: StateFlow<WorkoutSessionUiState> = _uiState.asStateFlow()
 
+    private var timerJob: Job? = null
+
     init {
         loadSelectedRoutine()
+    }
+
+    fun startTimer(seconds: Int, exerciseId: Int) {
+        timerJob?.cancel()
+        _uiState.update { it.copy(timerRemainingSeconds = seconds, activeTimerExerciseId = exerciseId) }
+
+        timerJob = viewModelScope.launch {
+            var remaining = seconds
+            while (remaining > 0) {
+                delay(1000)
+                remaining--
+                _uiState.update { it.copy(timerRemainingSeconds = remaining) }
+            }
+            _uiState.update { it.copy(timerRemainingSeconds = null, activeTimerExerciseId = null) }
+        }
+    }
+
+    fun stopTimer() {
+        timerJob?.cancel()
+        _uiState.update { it.copy(timerRemainingSeconds = null, activeTimerExerciseId = null) }
     }
 
     private fun loadSelectedRoutine() {
@@ -110,7 +143,11 @@ class WorkoutSessionViewModel : ViewModel() {
                         microciclo.numeroMicrociclo ?: 999
                     }
 
+                val targetWeek = _uiState.value.weekNumber ?: 1
+
                 val microcicloBase = microciclosBackend.firstOrNull { microciclo ->
+                    microciclo.numeroMicrociclo == targetWeek
+                } ?: microciclosBackend.firstOrNull { microciclo ->
                     microciclo.numeroMicrociclo == 1
                 } ?: microciclosBackend.firstOrNull()
 
@@ -424,6 +461,14 @@ class WorkoutSessionViewModel : ViewModel() {
                         error = null,
                         successMessage = "Entrenamiento guardado correctamente en el backend."
                     )
+                }
+
+                idRutina.let { rid ->
+                    state.weekNumber?.let { wn ->
+                        state.day?.let { d ->
+                            RoutineRepository.completeWorkout(rid, wn, d)
+                        }
+                    }
                 }
 
             } catch (e: Exception) {

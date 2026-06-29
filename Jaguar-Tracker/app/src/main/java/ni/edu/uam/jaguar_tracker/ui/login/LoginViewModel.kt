@@ -57,7 +57,7 @@ class LoginViewModel : ViewModel() {
         }
 
         if (!correoEsValido(correoActual)) {
-            _uiState.update { it.copy(error = "Ingresa un correo válido") }
+            _uiState.update { it.copy(error = "Solo se permiten correos institucionales @uamv.edu.ni") }
             return
         }
 
@@ -114,10 +114,6 @@ class LoginViewModel : ViewModel() {
     }
 
     private fun correoEsValido(correo: String): Boolean {
-        val correoRegex = Regex(
-            pattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-        )
-
-        return correoRegex.matches(correo)
+        return correo.endsWith("@uamv.edu.ni", ignoreCase = true)
     }
 }

@@ -19,8 +19,11 @@ import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaResponseDto
 import ni.edu.uam.jaguar_tracker.data.model.UsuarioDto
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
 
 interface ApiService {
@@ -37,6 +40,17 @@ interface ApiService {
     suspend fun crearRutina(
         @Body rutina: RutinaRequestDto
     ): RutinaResponseDto
+
+    @PUT("api/rutinas/{id}")
+    suspend fun actualizarRutina(
+        @Path("id") id: Int,
+        @Body rutina: RutinaRequestDto
+    ): RutinaResponseDto
+
+    @DELETE("api/rutinas/{id}")
+    suspend fun eliminarRutina(
+        @Path("id") id: Int
+    )
 
     // Rutina días
     @GET("api/rutina-dias")

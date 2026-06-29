@@ -47,13 +47,45 @@ object RoutineRepository {
         return RetrofitClient.apiService.crearRutina(request)
     }
 
+    suspend fun actualizarRutinaBackend(
+        idRutina: Int,
+        idUsuario: Int,
+        nombre: String,
+        usaMicrociclos: Boolean,
+        cantidadMicrociclos: Int,
+        fechaCreacion: String
+    ): RutinaResponseDto {
+        val request = RutinaRequestDto(
+            usuario = UsuarioRefDto(idUsuario = idUsuario),
+            nombre = nombre,
+            usaMicrociclos = usaMicrociclos,
+            cantidadMicrociclos = cantidadMicrociclos,
+            fechaCreacion = fechaCreacion
+        )
+
+        val response = RetrofitClient.apiService.actualizarRutina(idRutina, request)
+        
+        cargarRutinasDesdeBackend() // Recargamos todo para estar sincronizados
+        
+        return response
+    }
+
+    suspend fun eliminarRutinaBackend(idRutina: Int) {
+        RetrofitClient.apiService.eliminarRutina(idRutina)
+        
+        _routines.update { currentRoutines ->
+            currentRoutines.filterNot { it.id == idRutina }
+        }
+    }
+
     fun addRoutine(
         name: String,
         exercises: List<ExerciseModel>,
         weeks: Int = 4,
         trainingDays: Int = 3,
         selectedDays: List<String> = emptyList(),
-        weeklyPlans: List<WeeklyPlanModel> = emptyList()
+        weeklyPlans: List<WeeklyPlanModel> = emptyList(),
+        createdAt: String? = null
     ) {
         _routines.update { currentRoutines ->
 
@@ -75,7 +107,10 @@ object RoutineRepository {
                 weeklyPlans = weeklyPlans,
                 exercises = exercises,
                 isSelected = true,
-                hasEmoji = true
+                hasEmoji = true,
+                createdAt = createdAt,
+                skippedWorkouts = emptySet(),
+                completedWorkouts = emptySet()
             )
         }
     }
@@ -87,6 +122,30 @@ object RoutineRepository {
                     isSelected = routine.id == routineId,
                     hasEmoji = routine.id == routineId
                 )
+            }
+        }
+    }
+
+    fun skipWorkout(routineId: Int, weekNumber: Int, day: String) {
+        _routines.update { currentRoutines ->
+            currentRoutines.map { routine ->
+                if (routine.id == routineId) {
+                    routine.copy(skippedWorkouts = routine.skippedWorkouts + "$weekNumber-$day")
+                } else {
+                    routine
+                }
+            }
+        }
+    }
+
+    fun completeWorkout(routineId: Int, weekNumber: Int, day: String) {
+        _routines.update { currentRoutines ->
+            currentRoutines.map { routine ->
+                if (routine.id == routineId) {
+                    routine.copy(completedWorkouts = routine.completedWorkouts + "$weekNumber-$day")
+                } else {
+                    routine
+                }
             }
         }
     }
@@ -180,6 +239,26 @@ object RoutineRepository {
             emptyList()
         }
 
+        val entrenamientosBackend = try {
+            RetrofitClient.apiService.obtenerEntrenamientos()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val completedMap = entrenamientosBackend
+            .filter { it.completado == true }
+            .groupBy { it.rutina?.idRutina }
+            .mapValues { entry ->
+                entry.value.mapNotNull { ent ->
+                    val week = ent.microciclo?.numeroMicrociclo
+                    // Note: Day name is not in EntrenamientoResponseDto usually.
+                    // This is a limitation. For now we assume if a microcycle has a completed training, 
+                    // it counts. But the user has multiple days per microcycle.
+                    // We'll use local state for specific days if possible.
+                    null // Can't easily map back to "Lunes" from backend without more info
+                }
+            }
+
         val diasPorRutina = rutinaDiasBackend.groupBy { item ->
             item.rutina?.idRutina
         }
@@ -268,7 +347,10 @@ object RoutineRepository {
                 weeklyPlans = weeklyPlans,
                 exercises = exercises,
                 isSelected = index == 0,
-                hasEmoji = index == 0
+                hasEmoji = index == 0,
+                createdAt = rutina.fechaCreacion,
+                skippedWorkouts = emptySet(),
+                completedWorkouts = emptySet()
             )
         }
 

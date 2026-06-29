@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +29,8 @@ import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
+import java.time.LocalDate
+import java.time.DayOfWeek
 
 
 
@@ -39,7 +42,10 @@ data class Workout(
     val duration: Int,
     val exercises: Int,
     val isLocked: Boolean = false,
-    val isCurrent: Boolean = false
+    val isCurrent: Boolean = false,
+    val isDone: Boolean = false,
+    val isSkipped: Boolean = false,
+    val weekNumber: Int = 1
 )
 
 data class Week(
@@ -51,8 +57,8 @@ data class Week(
 
 @Composable
 fun HomeScreen(
-    onNewRoutineClick: () -> Unit = {},
-    onStartWorkoutClick: () -> Unit = {},
+    onNewRoutineClick: (Int?) -> Unit = {},
+    onStartWorkoutClick: (Workout) -> Unit = {},
     onProfileClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onRankingClick: () -> Unit = {},
@@ -138,6 +144,12 @@ fun HomeScreen(
                             routine = routine,
                             onClick = {
                                 homeViewModel.selectRoutine(routine.id)
+                            },
+                            onEditClick = {
+                                onNewRoutineClick(routine.id)
+                            },
+                            onDeleteClick = {
+                                homeViewModel.eliminarRutina(routine.id)
                             }
                         )
                     }
@@ -148,7 +160,7 @@ fun HomeScreen(
             // Nueva Rutina Button
             item {
                 Button(
-                    onClick = onNewRoutineClick,
+                    onClick = { onNewRoutineClick(null) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -194,7 +206,14 @@ fun HomeScreen(
                 items(weeks) { week ->
                     WeekAccordion(
                         week = week,
-                        onStartWorkoutClick = onStartWorkoutClick
+                        onStartWorkoutClick = { workout ->
+                            onStartWorkoutClick(workout)
+                        },
+                        onSkipWorkoutClick = { workout ->
+                            selectedRoutine?.let {
+                                homeViewModel.saltarEntrenamiento(it.id, workout.weekNumber, workout.day)
+                            }
+                        }
                     )
                 }
             }
@@ -233,12 +252,16 @@ fun HomeScreen(
 @Composable
 fun RoutineCard(
     routine: RoutineModel,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .width(160.dp)
-            .height(72.dp)
+            .height(84.dp)
             .clickable { onClick() }
             .border(
                 width = 1.dp,
@@ -248,24 +271,63 @@ fun RoutineCard(
         colors = CardDefaults.cardColors(containerColor = JaguarCard),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "${routine.id}: ${routine.name}${if (routine.hasEmoji) " 💪" else ""}",
-                color = if (routine.isSelected) JaguarGreen else JaguarWhite,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "${routine.id}: ${routine.name}${if (routine.hasEmoji) " 💪" else ""}",
+                    color = if (routine.isSelected) JaguarGreen else JaguarWhite,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-            Text(
-                text = "${routine.weeks} semanas",
-                color = JaguarGray,
-                style = MaterialTheme.typography.labelSmall
-            )
+                Text(
+                    text = "${routine.weeks} semanas",
+                    color = JaguarGray,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+
+            IconButton(
+                onClick = { showMenu = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Opciones",
+                    tint = JaguarGray,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                modifier = Modifier.background(JaguarCard)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Editar", color = Color.White) },
+                    onClick = {
+                        showMenu = false
+                        onEditClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Eliminar", color = Color.Red) },
+                    onClick = {
+                        showMenu = false
+                        onDeleteClick()
+                    }
+                )
+            }
         }
     }
 }
@@ -273,7 +335,8 @@ fun RoutineCard(
 @Composable
 fun WeekAccordion(
     week: Week,
-    onStartWorkoutClick: () -> Unit = {}
+    onStartWorkoutClick: (Workout) -> Unit = {},
+    onSkipWorkoutClick: (Workout) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(week.isExpanded) }
 
@@ -335,7 +398,8 @@ fun WeekAccordion(
                 week.workouts.forEach { workout ->
                     WorkoutCard(
                         workout = workout,
-                        onStartWorkoutClick = onStartWorkoutClick
+                        onStartWorkoutClick = { onStartWorkoutClick(workout) },
+                        onSkipClick = { onSkipWorkoutClick(workout) }
                     )
                 }
             }
@@ -346,17 +410,25 @@ fun WeekAccordion(
 @Composable
 fun WorkoutCard(
     workout: Workout,
-    onStartWorkoutClick: () -> Unit = {}
+    onStartWorkoutClick: (Workout) -> Unit = {},
+    onSkipClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 width = 1.dp,
-                color = if (workout.isCurrent) JaguarGreen else JaguarBorder,
+                color = when {
+                    workout.isDone -> JaguarGreen
+                    workout.isSkipped -> JaguarGray
+                    workout.isCurrent -> JaguarGreen
+                    else -> JaguarBorder
+                },
                 shape = RoundedCornerShape(12.dp)
             ),
-        colors = CardDefaults.cardColors(containerColor = JaguarCard),
+        colors = CardDefaults.cardColors(
+            containerColor = if (workout.isSkipped) JaguarSurface else JaguarCard
+        ),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -378,13 +450,35 @@ fun WorkoutCard(
                     }
                     Text(
                         text = workout.day,
-                        color = if (workout.isCurrent) JaguarTeal else JaguarGray,
+                        color = when {
+                            workout.isDone -> JaguarGreen
+                            workout.isSkipped -> JaguarGray
+                            workout.isCurrent -> JaguarTeal
+                            else -> JaguarGray
+                        },
                         style = MaterialTheme.typography.labelLarge
                     )
+                    
+                    if (workout.isDone) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "(Hecho)",
+                            color = JaguarGreen,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                    if (workout.isSkipped) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "(Saltado)",
+                            color = JaguarGray,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
                 Text(
                     text = workout.name,
-                    color = JaguarWhite,
+                    color = if (workout.isSkipped) JaguarGray else JaguarWhite,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -394,7 +488,7 @@ fun WorkoutCard(
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
-                                .background(workout.difficultyColor, CircleShape)
+                                .background(if (workout.isSkipped) JaguarGray else workout.difficultyColor, CircleShape)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -420,16 +514,33 @@ fun WorkoutCard(
                 }
             }
 
-            if (workout.isLocked) {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
-            } else {
-                IconButton(
-                    onClick = onStartWorkoutClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(JaguarTeal, CircleShape)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = JaguarBlack)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (workout.isCurrent && !workout.isDone) {
+                    TextButton(
+                        onClick = onSkipClick,
+                        colors = ButtonDefaults.textButtonColors(contentColor = JaguarRed)
+                    ) {
+                        Text("Saltar")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                if (workout.isLocked) {
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
+                } else if (workout.isDone) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = JaguarGreen, modifier = Modifier.size(28.dp))
+                } else if (workout.isSkipped) {
+                    Icon(Icons.Default.Block, contentDescription = null, tint = JaguarGray, modifier = Modifier.size(24.dp))
+                } else {
+                    IconButton(
+                        onClick = { onStartWorkoutClick(workout) },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(JaguarTeal, CircleShape)
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = JaguarBlack)
+                    }
                 }
             }
         }
@@ -532,6 +643,24 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
         "Domingo"
     )
 
+    // Parse createdAt date to know when the routine started
+    val creationDate = try {
+        LocalDate.parse(routine.createdAt?.substringBefore('T'))
+    } catch (_: Exception) {
+        LocalDate.now()
+    }
+
+    val creationDayOfWeek = creationDate.dayOfWeek
+    val creationDayIndex = when (creationDayOfWeek) {
+        DayOfWeek.MONDAY -> 0
+        DayOfWeek.TUESDAY -> 1
+        DayOfWeek.WEDNESDAY -> 2
+        DayOfWeek.THURSDAY -> 3
+        DayOfWeek.FRIDAY -> 4
+        DayOfWeek.SATURDAY -> 5
+        DayOfWeek.SUNDAY -> 6
+    }
+
     val selectedDays =
         if (routine.selectedDays.isNotEmpty()) {
             orderedDays.filter { day -> routine.selectedDays.contains(day) }
@@ -541,7 +670,18 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
 
     val exercisesCount = routine.exercises.size.coerceAtLeast(1)
 
+    // Decidir si la Semana 1 debe filtrar días o empezar completa
+    // Si hoy es Domingo y NO elegí Domingo, la Semana 1 filtrada quedaría vacía.
+    // En ese caso, mejor NO filtrar y que la Semana 1 empiece "la próxima semana" completa.
+    val hasAvailableDaysInWeek1 = selectedDays.any { day ->
+        orderedDays.indexOf(day) >= creationDayIndex
+    }
+
+    // Encontrar el primer entrenamiento pendiente (ni hecho ni saltado)
+    var foundCurrent = false
+
     return (1..routine.weeks).map { weekNumber ->
+        // ... (resto del mapeo)
 
         val weeklyPlan = routine.weeklyPlans.firstOrNull {
             it.weekNumber == weekNumber
@@ -557,7 +697,26 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
             else -> Color(0xFFFFA500)
         }
 
-        val workouts = selectedDays.mapIndexed { dayIndex, day ->
+        val workouts = selectedDays.mapNotNull { day ->
+            val dayIndexInOrdered = orderedDays.indexOf(day)
+
+            // Solo filtramos si hay al menos un día disponible esta semana.
+            // Si no hay ninguno (ej. hoy domingo y no entreno hoy), mostramos la semana 1 completa para el futuro.
+            if (weekNumber == 1 && hasAvailableDaysInWeek1 && dayIndexInOrdered < creationDayIndex) {
+                return@mapNotNull null
+            }
+
+            val workoutId = "$weekNumber-$day"
+            val isDone = routine.completedWorkouts.contains(workoutId)
+            val isSkipped = routine.skippedWorkouts.contains(workoutId)
+            
+            val isCurrent = if (!foundCurrent && !isDone && !isSkipped) {
+                foundCurrent = true
+                true
+            } else {
+                false
+            }
+
             Workout(
                 day = day,
                 name = routine.name,
@@ -565,16 +724,19 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
                 difficultyColor = difficultyColor,
                 duration = (exercisesCount * 12) + 15,
                 exercises = exercisesCount,
-                isLocked = false,
-                isCurrent = weekNumber == 1 && dayIndex == 0
+                isLocked = false, // El usuario pidió que no se bloqueen
+                isCurrent = isCurrent,
+                isDone = isDone,
+                isSkipped = isSkipped,
+                weekNumber = weekNumber
             )
         }
 
         Week(
             number = weekNumber,
             workouts = workouts,
-            isExpanded = weekNumber == 1,
-            hasEmoji = weekNumber == 1
+            isExpanded = workouts.any { it.isCurrent } || (weekNumber == 1 && workouts.isNotEmpty()),
+            hasEmoji = workouts.any { it.isCurrent }
         )
     }
 }

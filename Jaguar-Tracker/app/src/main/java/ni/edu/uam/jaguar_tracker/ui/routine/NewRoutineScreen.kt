@@ -122,7 +122,7 @@ fun NewRoutineContent(
                 )
             ) {
                 Text(
-                    text = stringResource(R.string.create_routine_button),
+                    text = if (state.isEditing) "Guardar Cambios" else stringResource(R.string.create_routine_button),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -138,7 +138,7 @@ fun NewRoutineContent(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            HeaderSection(onBack = safeBack)
+            HeaderSection(onBack = safeBack, isEditing = state.isEditing)
 
             Text(
                 text = stringResource(R.string.plan_mesocycle_subtitle),
@@ -276,7 +276,8 @@ fun NewRoutineContent(
 
 @Composable
 fun HeaderSection(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isEditing: Boolean = false
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -312,7 +313,7 @@ fun HeaderSection(
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            text = stringResource(R.string.routine_title),
+            text = if (isEditing) "Editar Rutina" else stringResource(R.string.routine_title),
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White
         )

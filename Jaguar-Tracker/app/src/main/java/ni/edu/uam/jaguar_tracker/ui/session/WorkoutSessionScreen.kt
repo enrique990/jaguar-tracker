@@ -39,59 +39,80 @@ fun WorkoutSessionScreen(
         sessionViewModel.completeWorkout()
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = JaguarBlack,
-        bottomBar = {
-            Button(
-                onClick = safeComplete,
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = JaguarBlack,
+            bottomBar = {
+                Button(
+                    onClick = safeComplete,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = JaguarTeal)
+                ) {
+                    Text(
+                        text = stringResource(R.string.complete_workout_button),
+                        color = JaguarBlack,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+        ) { paddingValues ->
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = JaguarTeal)
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.complete_workout_button),
-                    color = JaguarBlack,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    WorkoutSessionHeader(
+                        onBackClick = onBackClick,
+                        isKg = state.isKg,
+                        onUnitToggle = sessionViewModel::toggleUnit,
+                        routineName = state.routineName,
+                        dateLabel = state.dateLabel,
+                        weekNumber = state.weekNumber,
+                        day = state.day
+                    )
+                }
+
+                items(state.exercises) { exercise ->
+                    val isResting = state.activeTimerExerciseId == exercise.exerciseId
+                    ExerciseSessionCard(
+                        exercise = exercise,
+                        isKg = state.isKg,
+                        onWeightChange = sessionViewModel::updateWeight,
+                        onRepsChange = sessionViewModel::updateReps,
+                        onRirChange = sessionViewModel::updateRir,
+                        onStartRest = { sessionViewModel.startTimer(exercise.restSeconds, exercise.exerciseId) },
+                        isResting = isResting,
+                        timerSeconds = if (isResting) state.timerRemainingSeconds else null
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
 
-                WorkoutSessionHeader(
-                    onBackClick = onBackClick,
-                    isKg = state.isKg,
-                    onUnitToggle = sessionViewModel::toggleUnit,
-                    routineName = state.routineName,
-                    dateLabel = state.dateLabel
+        state.timerRemainingSeconds?.let { seconds ->
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 100.dp)
+            ) {
+                RestTimerOverlay(
+                    seconds = seconds,
+                    onClose = { sessionViewModel.stopTimer() }
                 )
-            }
-
-            items(state.exercises) { exercise ->
-                ExerciseSessionCard(
-                    exercise = exercise,
-                    isKg = state.isKg,
-                    onWeightChange = sessionViewModel::updateWeight,
-                    onRepsChange = sessionViewModel::updateReps,
-                    onRirChange = sessionViewModel::updateRir
-                )
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -148,7 +169,9 @@ fun WorkoutSessionHeader(
     isKg: Boolean,
     onUnitToggle: (Boolean) -> Unit,
     routineName: String,
-    dateLabel: String
+    dateLabel: String,
+    weekNumber: Int? = null,
+    day: String? = null
 ) {
     val safeBackClick = rememberSafeClick {
         onBackClick()
@@ -206,10 +229,15 @@ fun WorkoutSessionHeader(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = stringResource(R.string.workout_title_format, routineName),
+            text = if (weekNumber != null && day != null) {
+                "$routineName - Sem $weekNumber ($day)"
+            } else {
+                stringResource(R.string.workout_title_format, routineName)
+            },
             style = MaterialTheme.typography.displayLarge.copy(
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-1).sp
+                letterSpacing = (-1).sp,
+                fontSize = if (routineName.length > 15) 32.sp else 40.sp
             ),
             color = JaguarWhite
         )
@@ -265,7 +293,10 @@ fun ExerciseSessionCard(
     isKg: Boolean,
     onWeightChange: (Int, Int, String) -> Unit,
     onRepsChange: (Int, Int, String) -> Unit,
-    onRirChange: (Int, Int, String) -> Unit
+    onRirChange: (Int, Int, String) -> Unit,
+    onStartRest: () -> Unit,
+    isResting: Boolean = false,
+    timerSeconds: Int? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -342,22 +373,31 @@ fun ExerciseSessionCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { },
+                onClick = onStartRest,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = JaguarSurface),
-                border = BorderStroke(1.dp, JaguarBorder)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isResting) JaguarTeal else JaguarSurface
+                ),
+                border = BorderStroke(1.dp, if (isResting) JaguarTeal else JaguarBorder)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconPlaceholder(modifier = Modifier.size(18.dp))
+                    IconPlaceholder(
+                        modifier = Modifier.size(18.dp),
+                        color = if (isResting) JaguarBlack else JaguarWhite
+                    )
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(
-                        text = stringResource(R.string.start_rest_button, exercise.restSeconds),
-                        color = JaguarWhite,
+                        text = if (isResting && timerSeconds != null) {
+                            "Descansando: ${formatTimer(timerSeconds)}"
+                        } else {
+                            stringResource(R.string.start_rest_button, exercise.restSeconds)
+                        },
+                        color = if (isResting) JaguarBlack else JaguarWhite,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -594,6 +634,51 @@ fun formatPreviousWeight(value: Double): String {
         value.toInt().toString()
     } else {
         "%.1f".format(value)
+    }
+}
+
+fun formatTimer(seconds: Int): String {
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    return "%02d:%02d".format(minutes, remainingSeconds)
+}
+
+@Composable
+fun RestTimerOverlay(
+    seconds: Int,
+    onClose: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .padding(16.dp)
+            .width(200.dp),
+        colors = CardDefaults.cardColors(containerColor = JaguarTeal),
+        shape = RoundedCornerShape(50.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Descanso: ${formatTimer(seconds)}",
+                color = JaguarBlack,
+                fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = "✕",
+                modifier = Modifier
+                    .clickable { onClose() }
+                    .padding(4.dp),
+                color = JaguarBlack,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 

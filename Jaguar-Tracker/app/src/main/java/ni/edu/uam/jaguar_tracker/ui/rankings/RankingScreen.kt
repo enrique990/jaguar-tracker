@@ -1,4 +1,4 @@
-package ni.edu.uam.jaguar_tracker.ui.Ranking
+package ni.edu.uam.jaguar_tracker.ui.rankings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.home.JaguarBottomNavigation
 import ni.edu.uam.jaguar_tracker.ui.theme.*
-import java.util.Locale
 import androidx.compose.ui.platform.LocalLocale
 
 data class RankingUser(

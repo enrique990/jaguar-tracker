@@ -7,9 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import ni.edu.uam.jaguar_tracker.ui.rankings.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
-import ni.edu.uam.jaguar_tracker.ui.Ranking.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
@@ -88,8 +90,13 @@ fun JaguarTrackerNavHost(
         }
         composable("home") {
             HomeScreen(
-                onNewRoutineClick = { navController.navigate("new_routine") },
-                onStartWorkoutClick = { navController.navigate("workout_session") },
+                onNewRoutineClick = { routineId -> 
+                    val route = if (routineId != null) "new_routine?routineId=$routineId" else "new_routine"
+                    navController.navigate(route)
+                },
+                onStartWorkoutClick = { workout -> 
+                    navController.navigate("workout_session?weekNumber=${workout.weekNumber}&day=${workout.day}") 
+                },
                 onProfileClick = { navController.navigate("profile") },
                 onHistoryClick = { navController.navigate("history") },
                 onRankingClick = { navController.navigate("ranking") }
@@ -111,12 +118,32 @@ fun JaguarTrackerNavHost(
                 }
             )
         }
-        composable("new_routine") {
+        composable(
+            "new_routine?routineId={routineId}",
+            arguments = listOf(
+                navArgument("routineId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) {
             NewRoutineScreen {
                 navController.popBackStack()
             }
         }
-        composable("workout_session") {
+        composable(
+            "workout_session?weekNumber={weekNumber}&day={day}",
+            arguments = listOf(
+                navArgument("weekNumber") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                },
+                navArgument("day") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) {
             WorkoutSessionScreen(
                 onBackClick = { navController.popBackStack() },
             )

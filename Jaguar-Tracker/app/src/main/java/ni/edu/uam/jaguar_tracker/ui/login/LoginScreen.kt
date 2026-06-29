@@ -7,6 +7,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import ni.edu.uam.jaguar_tracker.R
@@ -56,6 +59,8 @@ fun LoginContent(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier,
@@ -167,7 +172,18 @@ fun LoginContent(
                     unfocusedTextColor = MaterialTheme.colorScheme.onBackground
                 ),
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (passwordVisible)
+                        Icons.Filled.Visibility
+                    else Icons.Filled.VisibilityOff
+
+                    val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = description)
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
