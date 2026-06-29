@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,7 +54,7 @@ data class Week(
 
 @Composable
 fun HomeScreen(
-    onNewRoutineClick: () -> Unit = {},
+    onNewRoutineClick: (Int?) -> Unit = {},
     onStartWorkoutClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
@@ -140,6 +141,12 @@ fun HomeScreen(
                             routine = routine,
                             onClick = {
                                 homeViewModel.selectRoutine(routine.id)
+                            },
+                            onEditClick = {
+                                onNewRoutineClick(routine.id)
+                            },
+                            onDeleteClick = {
+                                homeViewModel.eliminarRutina(routine.id)
                             }
                         )
                     }
@@ -150,7 +157,7 @@ fun HomeScreen(
             // Nueva Rutina Button
             item {
                 Button(
-                    onClick = onNewRoutineClick,
+                    onClick = { onNewRoutineClick(null) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -235,12 +242,16 @@ fun HomeScreen(
 @Composable
 fun RoutineCard(
     routine: RoutineModel,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .width(160.dp)
-            .height(72.dp)
+            .height(84.dp)
             .clickable { onClick() }
             .border(
                 width = 1.dp,
@@ -250,24 +261,63 @@ fun RoutineCard(
         colors = CardDefaults.cardColors(containerColor = JaguarCard),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "${routine.id}: ${routine.name}${if (routine.hasEmoji) " 💪" else ""}",
-                color = if (routine.isSelected) JaguarGreen else JaguarWhite,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "${routine.id}: ${routine.name}${if (routine.hasEmoji) " 💪" else ""}",
+                    color = if (routine.isSelected) JaguarGreen else JaguarWhite,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-            Text(
-                text = "${routine.weeks} semanas",
-                color = JaguarGray,
-                style = MaterialTheme.typography.labelSmall
-            )
+                Text(
+                    text = "${routine.weeks} semanas",
+                    color = JaguarGray,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+
+            IconButton(
+                onClick = { showMenu = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Opciones",
+                    tint = JaguarGray,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                modifier = Modifier.background(JaguarCard)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Editar", color = Color.White) },
+                    onClick = {
+                        showMenu = false
+                        onEditClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Eliminar", color = Color.Red) },
+                    onClick = {
+                        showMenu = false
+                        onDeleteClick()
+                    }
+                )
+            }
         }
     }
 }

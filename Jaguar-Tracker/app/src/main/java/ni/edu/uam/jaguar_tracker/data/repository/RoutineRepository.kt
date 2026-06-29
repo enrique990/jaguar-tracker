@@ -47,6 +47,37 @@ object RoutineRepository {
         return RetrofitClient.apiService.crearRutina(request)
     }
 
+    suspend fun actualizarRutinaBackend(
+        idRutina: Int,
+        idUsuario: Int,
+        nombre: String,
+        usaMicrociclos: Boolean,
+        cantidadMicrociclos: Int,
+        fechaCreacion: String
+    ): RutinaResponseDto {
+        val request = RutinaRequestDto(
+            usuario = UsuarioRefDto(idUsuario = idUsuario),
+            nombre = nombre,
+            usaMicrociclos = usaMicrociclos,
+            cantidadMicrociclos = cantidadMicrociclos,
+            fechaCreacion = fechaCreacion
+        )
+
+        val response = RetrofitClient.apiService.actualizarRutina(idRutina, request)
+        
+        cargarRutinasDesdeBackend() // Recargamos todo para estar sincronizados
+        
+        return response
+    }
+
+    suspend fun eliminarRutinaBackend(idRutina: Int) {
+        RetrofitClient.apiService.eliminarRutina(idRutina)
+        
+        _routines.update { currentRoutines ->
+            currentRoutines.filterNot { it.id == idRutina }
+        }
+    }
+
     fun addRoutine(
         name: String,
         exercises: List<ExerciseModel>,

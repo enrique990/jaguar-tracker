@@ -7,9 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import ni.edu.uam.jaguar_tracker.ui.ranking.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.home.HomeScreen
 import ni.edu.uam.jaguar_tracker.ui.history.HistoryScreen
-import ni.edu.uam.jaguar_tracker.ui.ranking.RankingScreen
 import ni.edu.uam.jaguar_tracker.ui.login.LoginScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileScreen
 import ni.edu.uam.jaguar_tracker.ui.profilesetup.ProfileSetupScreen
@@ -88,7 +90,10 @@ fun JaguarTrackerNavHost(
         }
         composable("home") {
             HomeScreen(
-                onNewRoutineClick = { navController.navigate("new_routine") },
+                onNewRoutineClick = { routineId -> 
+                    val route = if (routineId != null) "new_routine?routineId=$routineId" else "new_routine"
+                    navController.navigate(route)
+                },
                 onStartWorkoutClick = { navController.navigate("workout_session") },
                 onProfileClick = { navController.navigate("profile") },
                 onHistoryClick = { navController.navigate("history") },
@@ -111,7 +116,15 @@ fun JaguarTrackerNavHost(
                 }
             )
         }
-        composable("new_routine") {
+        composable(
+            "new_routine?routineId={routineId}",
+            arguments = listOf(
+                navArgument("routineId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) {
             NewRoutineScreen {
                 navController.popBackStack()
             }
