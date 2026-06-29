@@ -1,5 +1,7 @@
 package ni.edu.uam.jaguar_tracker.ui.session
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +50,9 @@ data class WorkoutSessionUiState(
     val isKg: Boolean = true,
     val exercises: List<ExerciseSession> = emptyList(),
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val timerRemainingSeconds: Int? = null,
+    val activeTimerExerciseId: Int? = null
 )
 
 class WorkoutSessionViewModel : ViewModel() {
@@ -62,8 +66,30 @@ class WorkoutSessionViewModel : ViewModel() {
 
     val uiState: StateFlow<WorkoutSessionUiState> = _uiState.asStateFlow()
 
+    private var timerJob: Job? = null
+
     init {
         loadSelectedRoutine()
+    }
+
+    fun startTimer(seconds: Int, exerciseId: Int) {
+        timerJob?.cancel()
+        _uiState.update { it.copy(timerRemainingSeconds = seconds, activeTimerExerciseId = exerciseId) }
+
+        timerJob = viewModelScope.launch {
+            var remaining = seconds
+            while (remaining > 0) {
+                delay(1000)
+                remaining--
+                _uiState.update { it.copy(timerRemainingSeconds = remaining) }
+            }
+            _uiState.update { it.copy(timerRemainingSeconds = null, activeTimerExerciseId = null) }
+        }
+    }
+
+    fun stopTimer() {
+        timerJob?.cancel()
+        _uiState.update { it.copy(timerRemainingSeconds = null, activeTimerExerciseId = null) }
     }
 
     private fun loadSelectedRoutine() {
