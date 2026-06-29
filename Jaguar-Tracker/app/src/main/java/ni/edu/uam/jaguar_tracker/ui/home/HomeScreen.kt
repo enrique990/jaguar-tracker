@@ -28,6 +28,8 @@ import ni.edu.uam.jaguar_tracker.R
 import ni.edu.uam.jaguar_tracker.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ni.edu.uam.jaguar_tracker.data.model.RoutineModel
+import java.time.LocalDate
+import java.time.DayOfWeek
 
 
 
@@ -532,6 +534,21 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
         "Domingo"
     )
 
+    // Obtener el día actual de la semana
+    val today = LocalDate.now()
+    val currentDayOfWeek = today.dayOfWeek
+    
+    // Mapear DayOfWeek de Java a nuestro índice de orderedDays (0 = Lunes, 6 = Domingo)
+    val currentDayIndex = when (currentDayOfWeek) {
+        DayOfWeek.MONDAY -> 0
+        DayOfWeek.TUESDAY -> 1
+        DayOfWeek.WEDNESDAY -> 2
+        DayOfWeek.THURSDAY -> 3
+        DayOfWeek.FRIDAY -> 4
+        DayOfWeek.SATURDAY -> 5
+        DayOfWeek.SUNDAY -> 6
+    }
+
     val selectedDays =
         if (routine.selectedDays.isNotEmpty()) {
             orderedDays.filter { day -> routine.selectedDays.contains(day) }
@@ -557,7 +574,18 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
             else -> Color(0xFFFFA500)
         }
 
-        val workouts = selectedDays.mapIndexed { dayIndex, day ->
+        // Para esta lógica, asumiremos que la "semana actual" es la semana 1 si no hay fecha de inicio.
+        // En una implementación real, se compararía la fecha actual con la fecha de inicio de la rutina.
+        val isCurrentWeek = weekNumber == 1 
+
+        val workouts = selectedDays.map { day ->
+            val dayIndexInOrdered = orderedDays.indexOf(day)
+            
+            // Un entrenamiento está bloqueado si es de la semana actual y el día ya pasó,
+            // o si es de una semana pasada (aunque usualmente las pasadas se marcan como completadas).
+            val isPastDay = isCurrentWeek && dayIndexInOrdered < currentDayIndex
+            val isToday = isCurrentWeek && dayIndexInOrdered == currentDayIndex
+
             Workout(
                 day = day,
                 name = routine.name,
@@ -565,16 +593,16 @@ fun buildWeeksFromSelectedRoutine(routine: RoutineModel?): List<Week> {
                 difficultyColor = difficultyColor,
                 duration = (exercisesCount * 12) + 15,
                 exercises = exercisesCount,
-                isLocked = false,
-                isCurrent = weekNumber == 1 && dayIndex == 0
+                isLocked = isPastDay,
+                isCurrent = isToday
             )
         }
 
         Week(
             number = weekNumber,
             workouts = workouts,
-            isExpanded = weekNumber == 1,
-            hasEmoji = weekNumber == 1
+            isExpanded = isCurrentWeek,
+            hasEmoji = isCurrentWeek
         )
     }
 }
