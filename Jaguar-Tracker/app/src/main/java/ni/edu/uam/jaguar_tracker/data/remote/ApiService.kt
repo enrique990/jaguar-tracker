@@ -18,6 +18,8 @@ import ni.edu.uam.jaguar_tracker.data.model.EntrenamientoResponseDto
 import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaRequestDto
 import ni.edu.uam.jaguar_tracker.data.model.SerieRealizadaResponseDto
 import ni.edu.uam.jaguar_tracker.data.model.UsuarioDto
+import ni.edu.uam.jaguar_tracker.data.model.PesoUsuarioDto
+import ni.edu.uam.jaguar_tracker.data.model.PesoUsuarioRequestDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -115,4 +117,12 @@ interface ApiService {
 
     @GET("api/usuarios")
     suspend fun obtenerUsuarios(): List<UsuarioDto>
+
+    @GET("api/pesos-usuarios")
+    suspend fun obtenerPesosUsuarios(): List<PesoUsuarioDto>
+
+    @POST("api/pesos-usuarios")
+    suspend fun crearPesoUsuario(
+        @Body pesoUsuario: PesoUsuarioRequestDto
+    ): PesoUsuarioDto
 }
