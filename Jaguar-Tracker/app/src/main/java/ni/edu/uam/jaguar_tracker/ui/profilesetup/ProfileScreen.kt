@@ -78,7 +78,22 @@ fun ProfileScreen(
                     cif = state.cif
                 )
             }
-            item { StrengthCalculatorSection() }
+            item {
+                StrengthCalculatorSection(
+                    exercise = state.calculatorExercise,
+                    liftedWeight = state.calculatorWeight,
+                    reps = state.calculatorReps,
+                    bodyWeight = state.calculatorBodyWeight,
+                    estimatedOneRm = state.calculatorEstimatedOneRm,
+                    relativeStrength = state.calculatorRelativeStrength,
+                    category = state.calculatorCategory,
+                    onLiftedWeightChange = profileViewModel::onCalculatorWeightChanged,
+                    onRepsChange = profileViewModel::onCalculatorRepsChanged,
+                    onBodyWeightChange = profileViewModel::onCalculatorBodyWeightChanged,
+                    onCalculateClick = profileViewModel::calcularFuerzaRelativa
+                )
+            }
+
             item {
                 BodyWeightSection(
                     pesoActual = state.pesoActual,
@@ -165,7 +180,20 @@ fun UserProfileSection(
 }
 
 @Composable
-fun StrengthCalculatorSection(modifier: Modifier = Modifier) {
+fun StrengthCalculatorSection(
+    exercise: String,
+    liftedWeight: String,
+    reps: String,
+    bodyWeight: String,
+    estimatedOneRm: String,
+    relativeStrength: String,
+    category: String,
+    onLiftedWeightChange: (String) -> Unit,
+    onRepsChange: (String) -> Unit,
+    onBodyWeightChange: (String) -> Unit,
+    onCalculateClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     SectionCard(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -173,15 +201,18 @@ fun StrengthCalculatorSection(modifier: Modifier = Modifier) {
                     icon = Icons.Default.Calculate,
                     backgroundColor = Color(0xFF00D1FF)
                 )
+
                 Spacer(modifier = Modifier.width(16.dp))
+
                 Column {
                     Text(
                         text = stringResource(R.string.strength_calculator_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = JaguarWhite
                     )
+
                     Text(
-                        text = stringResource(R.string.strength_calculator_subtitle),
+                        text = "Calculá tu fuerza relativa con 1RM estimado",
                         style = MaterialTheme.typography.labelSmall,
                         color = JaguarGray
                     )
@@ -197,47 +228,64 @@ fun StrengthCalculatorSection(modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Exercise Dropdown Placeholder
-            var expanded by remember { mutableStateOf(false) }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
                     .background(JaguarBlack, RoundedCornerShape(8.dp))
                     .border(1.dp, JaguarBorder, RoundedCornerShape(8.dp))
-                    .clickable { expanded = !expanded }
                     .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "Press de Banca", color = JaguarWhite, style = MaterialTheme.typography.bodyMedium)
-                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = JaguarGray)
-                }
+                Text(
+                    text = exercise,
+                    color = JaguarWhite,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+
             Text(
-                text = "Valores por defecto de tu última sesión",
+                text = "El 1RM se estima con la fórmula de Epley.",
                 style = MaterialTheme.typography.labelSmall,
-                color = JaguarGray.copy(alpha = 0.6f),
+                color = JaguarGray.copy(alpha = 0.7f),
                 fontSize = 10.sp
             )
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CalculatorInputField(label = "Peso (kg)", value = "100", modifier = Modifier.weight(1f))
-                CalculatorInputField(label = "Reps", value = "8", modifier = Modifier.weight(1f))
-                CalculatorInputField(label = "Peso Corp.", value = "75", modifier = Modifier.weight(1f))
+                CalculatorInputField(
+                    label = "Peso",
+                    value = liftedWeight,
+                    suffix = "kg",
+                    onValueChange = onLiftedWeightChange,
+                    modifier = Modifier.weight(1f)
+                )
+
+                CalculatorInputField(
+                    label = "Reps",
+                    value = reps,
+                    suffix = "",
+                    onValueChange = onRepsChange,
+                    modifier = Modifier.weight(1f)
+                )
+
+                CalculatorInputField(
+                    label = "Peso Corp.",
+                    value = bodyWeight,
+                    suffix = "kg",
+                    onValueChange = onBodyWeightChange,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { /* TODO */ },
+                onClick = onCalculateClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -249,6 +297,29 @@ fun StrengthCalculatorSection(modifier: Modifier = Modifier) {
                     color = JaguarBlack,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DataRow(
+                    label = "1RM estimado",
+                    value = estimatedOneRm
+                )
+
+                HorizontalDivider(color = JaguarBorder, thickness = 1.dp)
+
+                DataRow(
+                    label = "Fuerza relativa",
+                    value = relativeStrength
+                )
+
+                HorizontalDivider(color = JaguarBorder, thickness = 1.dp)
+
+                DataRow(
+                    label = "Clasificación",
+                    value = category
                 )
             }
         }
@@ -514,6 +585,8 @@ fun IconBox(
 fun CalculatorInputField(
     label: String,
     value: String,
+    suffix: String,
+    onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -524,21 +597,40 @@ fun CalculatorInputField(
             fontSize = 10.sp,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        Box(
+
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(40.dp)
-                .background(JaguarBlack, RoundedCornerShape(8.dp))
-                .border(1.dp, JaguarBorder, RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = value,
-                color = JaguarWhite,
-                style = MaterialTheme.typography.bodyMedium,
+                .height(58.dp),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.Bold
+            ),
+            suffix = {
+                if (suffix.isNotBlank()) {
+                    Text(
+                        text = suffix,
+                        color = JaguarGray,
+                        fontSize = 10.sp
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Decimal
+            ),
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = JaguarBlack,
+                unfocusedContainerColor = JaguarBlack,
+                focusedBorderColor = JaguarTeal,
+                unfocusedBorderColor = JaguarBorder,
+                focusedTextColor = JaguarWhite,
+                unfocusedTextColor = JaguarWhite,
+                cursorColor = JaguarTeal
             )
-        }
+        )
     }
 }
 

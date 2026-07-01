@@ -7,17 +7,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ni.edu.uam.jaguar_tracker.data.model.PesoUsuarioRequestDto
+import ni.edu.uam.jaguar_tracker.data.model.UsuarioRefDto
 import ni.edu.uam.jaguar_tracker.data.remote.RetrofitClient
 import ni.edu.uam.jaguar_tracker.data.repository.UserSessionRepository
 import java.text.SimpleDateFormat
-import java.util.Locale
-import ni.edu.uam.jaguar_tracker.data.model.PesoUsuarioRequestDto
-import ni.edu.uam.jaguar_tracker.data.model.UsuarioRefDto
 import java.util.Date
+import java.util.Locale
 
 data class ProfileUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
+    val successMessage: String? = null,
+
     val correo: String = "Usuario",
     val cif: String = "",
     val pesoActual: String = "Sin registro",
@@ -25,10 +27,18 @@ data class ProfileUiState(
     val entrenamientosCompletados: String = "0",
     val rutinasCreadas: String = "0",
     val diasActivos: String = "0",
+
     val showWeightDialog: Boolean = false,
     val pesoInput: String = "",
     val isSavingWeight: Boolean = false,
-    val successMessage: String? = null
+
+    val calculatorExercise: String = "Press de Banca",
+    val calculatorWeight: String = "100",
+    val calculatorReps: String = "8",
+    val calculatorBodyWeight: String = "",
+    val calculatorEstimatedOneRm: String = "-",
+    val calculatorRelativeStrength: String = "-",
+    val calculatorCategory: String = "Ingresá los datos y calculá tu fuerza relativa."
 )
 
 class ProfileViewModel : ViewModel() {
@@ -39,6 +49,97 @@ class ProfileViewModel : ViewModel() {
     init {
         cargarPerfil()
     }
+
+    fun cargarPerfil() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isLoading = true, error = null)
+            }
+
+            try {
+                val idUsuario = UserSessionRepository.requerirIdUsuarioActual()
+                val sesion = UserSessionRepository.cargarSesion()
+
+                val usuarios = RetrofitClient.apiService.obtenerUsuarios()
+                val usuarioActual = usuarios.firstOrNull { usuario ->
+                    usuario.idUsuario == idUsuario
+                }
+
+                val pesosUsuario = RetrofitClient.apiService.obtenerPesosUsuarios()
+                    .filter { peso ->
+                        peso.usuario?.idUsuario == idUsuario
+                    }
+                    .sortedByDescending { peso ->
+                        peso.fechaRegistro ?: ""
+                    }
+
+                val ultimoPeso = pesosUsuario.firstOrNull()
+
+                val entrenamientos = try {
+                    RetrofitClient.apiService.obtenerEntrenamientos()
+                        .filter { entrenamiento ->
+                            entrenamiento.usuario?.idUsuario == idUsuario &&
+                                    entrenamiento.completado == true
+                        }
+                } catch (e: Exception) {
+                    emptyList()
+                }
+
+                val rutinas = try {
+                    RetrofitClient.apiService.obtenerRutinas()
+                        .filter { rutina ->
+                            rutina.usuario?.idUsuario == idUsuario
+                        }
+                } catch (e: Exception) {
+                    emptyList()
+                }
+
+                val diasActivos = entrenamientos
+                    .mapNotNull { it.fechaEntrenamiento?.substringBefore("T") }
+                    .distinct()
+                    .size
+
+                val pesoCorporal = ultimoPeso?.peso
+                val pesoCorporalTexto = if (pesoCorporal != null) {
+                    formatNumber(pesoCorporal)
+                } else {
+                    ""
+                }
+
+                _uiState.update { current ->
+                    current.copy(
+                        isLoading = false,
+                        error = null,
+                        correo = usuarioActual?.correo ?: sesion?.correo ?: "Usuario",
+                        cif = usuarioActual?.cif ?: "",
+                        pesoActual = if (ultimoPeso?.peso != null) {
+                            "${formatNumber(ultimoPeso.peso)} kg"
+                        } else {
+                            "Sin registro"
+                        },
+                        fechaUltimoPeso = formatDate(ultimoPeso?.fechaRegistro),
+                        entrenamientosCompletados = entrenamientos.size.toString(),
+                        rutinasCreadas = rutinas.size.toString(),
+                        diasActivos = diasActivos.toString(),
+                        calculatorBodyWeight = if (current.calculatorBodyWeight.isBlank()) {
+                            pesoCorporalTexto
+                        } else {
+                            current.calculatorBodyWeight
+                        }
+                    )
+                }
+
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "No se pudo cargar el perfil: ${e.message ?: "Error desconocido"}"
+                    )
+                }
+            }
+        }
+    }
+
     fun abrirDialogoPeso() {
         val pesoActual = _uiState.value.pesoActual
             .replace(" kg", "")
@@ -110,7 +211,8 @@ class ProfileViewModel : ViewModel() {
                         showWeightDialog = false,
                         pesoInput = "",
                         isSavingWeight = false,
-                        successMessage = "Peso actualizado correctamente"
+                        successMessage = "Peso actualizado correctamente",
+                        calculatorBodyWeight = formatNumber(peso)
                     )
                 }
 
@@ -127,86 +229,89 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    fun onCalculatorWeightChanged(value: String) {
+        _uiState.update {
+            it.copy(
+                calculatorWeight = value,
+                calculatorEstimatedOneRm = "-",
+                calculatorRelativeStrength = "-",
+                calculatorCategory = "Ingresá los datos y calculá tu fuerza relativa."
+            )
+        }
+    }
+
+    fun onCalculatorRepsChanged(value: String) {
+        _uiState.update {
+            it.copy(
+                calculatorReps = value,
+                calculatorEstimatedOneRm = "-",
+                calculatorRelativeStrength = "-",
+                calculatorCategory = "Ingresá los datos y calculá tu fuerza relativa."
+            )
+        }
+    }
+
+    fun onCalculatorBodyWeightChanged(value: String) {
+        _uiState.update {
+            it.copy(
+                calculatorBodyWeight = value,
+                calculatorEstimatedOneRm = "-",
+                calculatorRelativeStrength = "-",
+                calculatorCategory = "Ingresá los datos y calculá tu fuerza relativa."
+            )
+        }
+    }
+
+    fun calcularFuerzaRelativa() {
+        val state = _uiState.value
+
+        val pesoLevantado = state.calculatorWeight.replace(",", ".").toDoubleOrNull()
+        val repeticiones = state.calculatorReps.toIntOrNull()
+        val pesoCorporal = state.calculatorBodyWeight.replace(",", ".").toDoubleOrNull()
+
+        if (pesoLevantado == null || pesoLevantado <= 0.0) {
+            _uiState.update {
+                it.copy(calculatorCategory = "Ingresá un peso levantado válido.")
+            }
+            return
+        }
+
+        if (repeticiones == null || repeticiones <= 0) {
+            _uiState.update {
+                it.copy(calculatorCategory = "Ingresá una cantidad de repeticiones válida.")
+            }
+            return
+        }
+
+        if (pesoCorporal == null || pesoCorporal <= 0.0) {
+            _uiState.update {
+                it.copy(calculatorCategory = "Ingresá un peso corporal válido.")
+            }
+            return
+        }
+
+        val oneRmEstimado = pesoLevantado * (1 + repeticiones / 30.0)
+        val fuerzaRelativa = oneRmEstimado / pesoCorporal
+
+        val categoria = when {
+            fuerzaRelativa < 1.0 -> "Nivel inicial"
+            fuerzaRelativa < 1.5 -> "Nivel intermedio"
+            fuerzaRelativa < 2.0 -> "Nivel avanzado"
+            else -> "Nivel excelente"
+        }
+
+        _uiState.update {
+            it.copy(
+                calculatorEstimatedOneRm = "${formatNumber(oneRmEstimado)} kg",
+                calculatorRelativeStrength = "${formatNumberTwoDecimals(fuerzaRelativa)}x",
+                calculatorCategory = categoria
+            )
+        }
+    }
+
     private fun fechaActualBackend(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         return formatter.format(Date())
-    }
-    fun cargarPerfil() {
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(isLoading = true, error = null)
-            }
-
-            try {
-                val idUsuario = UserSessionRepository.requerirIdUsuarioActual()
-                val sesion = UserSessionRepository.cargarSesion()
-
-                val usuarios = RetrofitClient.apiService.obtenerUsuarios()
-                val usuarioActual = usuarios.firstOrNull { usuario ->
-                    usuario.idUsuario == idUsuario
-                }
-
-                val pesosUsuario = RetrofitClient.apiService.obtenerPesosUsuarios()
-                    .filter { peso ->
-                        peso.usuario?.idUsuario == idUsuario
-                    }
-                    .sortedByDescending { peso ->
-                        peso.fechaRegistro ?: ""
-                    }
-
-                val ultimoPeso = pesosUsuario.firstOrNull()
-
-                val entrenamientos = try {
-                    RetrofitClient.apiService.obtenerEntrenamientos()
-                        .filter { entrenamiento ->
-                            entrenamiento.usuario?.idUsuario == idUsuario &&
-                                    entrenamiento.completado == true
-                        }
-                } catch (e: Exception) {
-                    emptyList()
-                }
-
-                val rutinas = try {
-                    RetrofitClient.apiService.obtenerRutinas()
-                        .filter { rutina ->
-                            rutina.usuario?.idUsuario == idUsuario
-                        }
-                } catch (e: Exception) {
-                    emptyList()
-                }
-
-                val diasActivos = entrenamientos
-                    .mapNotNull { it.fechaEntrenamiento?.substringBefore("T") }
-                    .distinct()
-                    .size
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = null,
-                        correo = usuarioActual?.correo ?: sesion?.correo ?: "Usuario",
-                        cif = usuarioActual?.cif ?: "",
-                        pesoActual = if (ultimoPeso?.peso != null) {
-                            "${formatNumber(ultimoPeso.peso)} kg"
-                        } else {
-                            "Sin registro"
-                        },
-                        fechaUltimoPeso = formatDate(ultimoPeso?.fechaRegistro),
-                        entrenamientosCompletados = entrenamientos.size.toString(),
-                        rutinasCreadas = rutinas.size.toString(),
-                        diasActivos = diasActivos.toString()
-                    )
-                }
-
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = "No se pudo cargar el perfil: ${e.message ?: "Error desconocido"}"
-                    )
-                }
-            }
-        }
     }
 
     private fun formatDate(rawDate: String?): String {
@@ -228,5 +333,9 @@ class ProfileViewModel : ViewModel() {
         } else {
             String.format(Locale.US, "%.1f", value)
         }
+    }
+
+    private fun formatNumberTwoDecimals(value: Double): String {
+        return String.format(Locale.US, "%.2f", value)
     }
 }
